@@ -1,0 +1,17 @@
+[project]
+name = "f1-race-analytics"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Daniele", email = "danielerb.dev@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+f1-race-analytics = "f1_race_analytics:main"
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
