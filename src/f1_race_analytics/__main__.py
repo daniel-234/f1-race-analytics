@@ -4,7 +4,7 @@ from .jolpica_f1_data import fetch_races
 from .open_f1_data import fetch_meetings
 
 
-async def main():
+async def fetch_data():
     races_data = await fetch_races()
     #meetings_data = await fetch_meetings()
     
@@ -15,9 +15,13 @@ async def main():
     races = races_data.get('MRData').get('RaceTable').get('Races')
     race_info = [(race.get('date'), race.get('raceName', {})) for race in races]
     
-    print("RACES from Jolpica:\n")
+    print("\n\nRACES from Jolpica:\n")
     print(race_info)
 
 
+def main():
+    asyncio.run(fetch_data())
 
-asyncio.run(main())
+
+if __name__ == '__main__':
+    main()
