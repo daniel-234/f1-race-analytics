@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-f1-race-analytics = "f1_race_analytics:main"
+f1analytics = "f1_race_analytics.__main__:main"
 
 [build-system]
 requires = ["uv_build>=0.9.17,<0.10.0"]
