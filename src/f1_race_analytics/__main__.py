@@ -18,4 +18,6 @@ async def main():
     print("RACES from Jolpica:\n")
     print(race_info)
 
-asyncio.run(main()) 
+
+
+asyncio.run(main())
