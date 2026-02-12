@@ -1,22 +1,32 @@
 import asyncio
+from typing import NamedTuple
+from datetime import datetime, date
 
-from .jolpica_f1_data import fetch_races
-from .open_f1_data import fetch_meetings
+from .f1_data import fetch_races
+
+
+# F1 Champioship season year
+year = 2026
+
+class Event(NamedTuple):
+    name: str
+    date: date
 
 
 async def fetch_data():
-    races_data = await fetch_races()
-    #meetings_data = await fetch_meetings()
-    
-    #grand_prix_names = [grand_prix_official for grand_prix_official in meetings_data.get("meeting_official_name")]
-    #print("\n\nMeetings from OpenF1:")
-    #print(grand_prix_names)
-
+    races_data = await fetch_races(year)
+    if not races_data:
+        print("Sorry, something went wrong")
+        return None
     races = races_data.get('MRData').get('RaceTable').get('Races')
-    race_info = [(race.get('date'), race.get('raceName', {})) for race in races]
+    race_info = [Event(race.get('raceName', ""), _convert_to_dt(race.get('date'))) for race in races]
     
     print("\n\nRACES from Jolpica:\n")
     print(race_info)
+
+
+def _convert_to_dt(d: str) -> date:
+    return datetime.strptime(d, "%Y-%m-%d").date()
 
 
 def main():
