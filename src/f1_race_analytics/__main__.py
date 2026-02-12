@@ -1,7 +1,7 @@
 import asyncio
 
-from jolpica_f1_data import fetch_races
-from open_f1_data import fetch_meetings
+from .jolpica_f1_data import fetch_races
+from .open_f1_data import fetch_meetings
 
 
 async def main():
@@ -18,4 +18,4 @@ async def main():
     print("RACES from Jolpica:\n")
     print(race_info)
 
-asyncio.run(main())
+asyncio.run(main()) 
