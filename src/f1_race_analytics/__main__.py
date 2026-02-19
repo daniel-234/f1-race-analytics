@@ -1,4 +1,3 @@
-import asyncio
 from typing import NamedTuple
 from datetime import datetime, date
 
@@ -13,8 +12,8 @@ class Event(NamedTuple):
     date: date
 
 
-async def fetch_data() -> list[Event] | list[None]:
-    races_data = await fetch_races(YEAR)
+def fetch_data() -> list[Event] | list[None]:
+    races_data = fetch_races(YEAR)
     if races_data is None:
         print("Sorry, something went wrong")
         return []
@@ -31,7 +30,7 @@ def _convert_to_dt(d: str) -> date:
 
 
 def main():
-    asyncio.run(fetch_data())
+    fetch_data()
 
 
 if __name__ == '__main__':
