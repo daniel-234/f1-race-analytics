@@ -10,11 +10,12 @@ def create_races():
         championship_2026 = Championship(year=2026)
 
         races_data = fetch_data()
-        races = [Race(name=race.name, championship_id=championship_2026.id) for race in races_data]
+        races = [Race(name=race.name, championship=championship_2026) for race in races_data]
 
-        session.add(races)
+        session.add_all(races)
         session.commit()
 
-        session.refresh(races)
+        for race in races:
+            session.refresh(race)
 
-        print("Championship's races: ", championship_2026.races)
+        print("\nChampionship's races: ", championship_2026.races)

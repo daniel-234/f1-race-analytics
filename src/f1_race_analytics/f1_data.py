@@ -21,9 +21,6 @@ def fetch_data() -> list[Event] | list[None]:
         return []
     races = races_data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
     race_info = [Event(race.get('raceName', ""), _convert_to_dt(race.get('date', ''))) for race in races]
-    
-    print("\n\nRACES from Jolpica:\n")
-    print(race_info)
     return race_info
 
 
