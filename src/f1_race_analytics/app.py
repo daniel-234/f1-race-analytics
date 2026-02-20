@@ -16,12 +16,9 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
 
         session.add_all(races)
         session.commit()
-        for race in races:
-            session.refresh(race)
-
-        print("\n\nChampionship's races: ", championship.races)
+        session.refresh(championship, attribute_names=["year", "races"])
         
-        return championship
+    return championship
 
         
 def create_constructors(year: int, constructors_data: list[ConstructorData]) -> Championship:
@@ -35,9 +32,6 @@ def create_constructors(year: int, constructors_data: list[ConstructorData]) -> 
 
         session.add_all(constructors)
         session.commit()
-        for constructor in constructors:
-            session.refresh(constructor)
+        session.refresh(championship, attribute_names=["year", "constructors"])
 
-        print("\n\nConstructors: ", championship.constructors)
-
-        return championship
+    return championship
