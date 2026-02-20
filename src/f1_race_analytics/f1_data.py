@@ -5,8 +5,6 @@ from datetime import datetime, date
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
 RACES = "races"
-# F1 Champioship season year
-YEAR = 2026
 
 
 class Event(NamedTuple):
@@ -14,8 +12,8 @@ class Event(NamedTuple):
     date: date
 
 
-def fetch_data() -> list[Event] | list[None]:
-    races_data = fetch_races(YEAR)
+def fetch_data(year) -> list[Event] | list[None]:
+    races_data = fetch_races(year)
     if races_data is None:
         print("Sorry, something went wrong")
         return []
@@ -33,7 +31,7 @@ def fetch_races(year: int) -> dict[str, dict] | None:
     Retrieve historical data from Jolpica F1 API:
     """
     try:
-        response = httpx.get(f"{JOLPICA_ENDPOINT}/{str(year)}/{RACES}/")
+        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{RACES}/")
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:

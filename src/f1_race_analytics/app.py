@@ -1,21 +1,23 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .models import Championship, Race
-from .f1_data import fetch_data
+from .f1_data import fetch_data, Event
 
 
-def create_races():
+def create_races(year: int, races_data: list[Event]) -> Championship:
     with Session(engine) as session:
-        championship_2026 = Championship(year=2026)
+        championship = Championship(year=year)
 
-        races_data = fetch_data()
-        races = [Race(name=race.name, championship=championship_2026) for race in races_data]
+        races = [Race(name=race.name, championship=championship) for race in races_data]
 
         session.add_all(races)
         session.commit()
-
         for race in races:
             session.refresh(race)
 
-        print("\nChampionship's races: ", championship_2026.races)
+        print("\n\nChampionship's races: ", championship.races)
+        
+        return championship
+
+        
