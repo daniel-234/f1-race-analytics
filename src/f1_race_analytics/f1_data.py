@@ -17,6 +17,12 @@ class ConstructorData(NamedTuple):
     nationality: str
 
 
+class DriverData(NamedTuple):
+    first_name: str
+    last_name: str
+    nationality: str
+
+
 def fetch_races(year) -> list[Event] | list[None]:
     """
     Get the races for the given year
@@ -26,7 +32,7 @@ def fetch_races(year) -> list[Event] | list[None]:
         print("Sorry, something went wrong")
         return []
     races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
-    race_info = [Event(race.get('raceName', ""), _convert_to_dt(race.get('date', ''))) for race in races]
+    race_info = [Event(race.get("raceName", ""), _convert_to_dt(race.get("date", ""))) for race in races]
     return race_info
 
 
@@ -39,8 +45,21 @@ def fetch_constructors(year) -> list[ConstructorData] | list[None]:
         print("Sorry, something went wrong")
         return []
     constructors = constructors_data.get("MRData", {}).get("ConstructorTable", {}).get("Constructors", [])
-    constructor_info = [ConstructorData(constructor.get('name', ""), constructor.get("nationality", "")) for constructor in constructors]
+    constructor_info = [ConstructorData(constructor.get("name", ""), constructor.get("nationality", "")) for constructor in constructors]
     return constructor_info
+
+
+def fetch_drivers(year) -> list[DriverData] | list[None]:
+    """
+    Get the drivers for the current year
+    """
+    drivers_data = _fetch_data(year, "drivers")
+    if drivers_data is None:
+        print("Sorry, something went wrong")
+        return []
+    drivers = drivers_data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])
+    driver_info = [DriverData(driver.get("givenName", ""), driver.get("familyName", ""), driver.get("nationality", "")) for driver in drivers]
+    return driver_info
 
 
 def _convert_to_dt(d: str) -> date:
