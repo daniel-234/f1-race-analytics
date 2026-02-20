@@ -12,14 +12,35 @@ class Event(NamedTuple):
     date: date
 
 
+class ConstructorData(NamedTuple):
+    name: str
+    nationality: str
+
+
 def fetch_races(year) -> list[Event] | list[None]:
+    """
+    Get the races for the given year
+    """
     races_data = _fetch_data(year, "races")
     if races_data is None:
         print("Sorry, something went wrong")
         return []
-    races = races_data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
+    races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
     race_info = [Event(race.get('raceName', ""), _convert_to_dt(race.get('date', ''))) for race in races]
     return race_info
+
+
+def fetch_constructors(year) -> list[ConstructorData] | list[None]:
+    """
+    Get the constructors for the given year
+    """
+    constructors_data = _fetch_data(year, "constructors")
+    if constructors_data is None:
+        print("Sorry, something went wrong")
+        return []
+    constructors = constructors_data.get("MRData", {}).get("ConstructorTable", {}).get("Constructors", [])
+    constructor_info = [ConstructorData(constructor.get('name', ""), constructor.get("nationality", "")) for constructor in constructors]
+    return constructor_info
 
 
 def _convert_to_dt(d: str) -> date:
