@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .models import Championship, Race
-from .f1_data import fetch_data, Event
+from .f1_data import Event
 
 
 def create_races(year: int, races_data: list[Event]) -> Championship:

@@ -12,8 +12,8 @@ class Event(NamedTuple):
     date: date
 
 
-def fetch_data(year) -> list[Event] | list[None]:
-    races_data = fetch_races(year)
+def fetch_races(year) -> list[Event] | list[None]:
+    races_data = _fetch_data(year, "races")
     if races_data is None:
         print("Sorry, something went wrong")
         return []
@@ -26,12 +26,12 @@ def _convert_to_dt(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
 
-def fetch_races(year: int) -> dict[str, dict] | None:
+def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
     """
     Retrieve historical data from Jolpica F1 API:
     """
     try:
-        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{RACES}/")
+        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{endpoint}/")
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
