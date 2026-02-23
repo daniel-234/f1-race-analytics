@@ -5,8 +5,6 @@ from datetime import datetime, date
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
 RACES = "races"
-# F1 Champioship season year
-YEAR = 2026
 
 
 class Event(NamedTuple):
@@ -14,29 +12,78 @@ class Event(NamedTuple):
     date: date
 
 
-def fetch_data() -> list[Event] | list[None]:
-    races_data = fetch_races(YEAR)
+class ConstructorData(NamedTuple):
+    # Identifies the constructor in the API database
+    constructor_id: str 
+    name: str
+    nationality: str
+
+
+class DriverData(NamedTuple):
+    number: str
+    first_name: str
+    last_name: str
+    nationality: str
+
+
+def fetch_races(year) -> list[Event] | list[None]:
+    """
+    Get the races for the given year
+    """
+    races_data = _fetch_data(year, "races")
     if races_data is None:
         print("Sorry, something went wrong")
         return []
-    races = races_data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
-    race_info = [Event(race.get('raceName', ""), _convert_to_dt(race.get('date', ''))) for race in races]
-    
-    print("\n\nRACES from Jolpica:\n")
-    print(race_info)
+    races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    race_info = [Event(race.get("raceName", ""), _convert_to_dt(race.get("date", ""))) for race in races]
     return race_info
+
+
+def fetch_constructors(year) -> list[ConstructorData] | list[None]:
+    """
+    Get the constructors for the given year
+    """
+    constructors_data = _fetch_data(year, "constructors")
+    if constructors_data is None:
+        print("Sorry, something went wrong")
+        return []
+    constructors = constructors_data.get("MRData", {}).get("ConstructorTable", {}).get("Constructors", [])
+    constructor_info = [ConstructorData(constructor.get("constructorId", ""), constructor.get("name", ""), constructor.get("nationality", "")) for constructor in constructors]
+    return constructor_info
+
+
+def fetch_constructor_driver_pairs(year: int) -> list[tuple[ConstructorData, DriverData]]:
+    constructors = fetch_constructors(year) 
+    
+    pairs = []
+    for constructor in constructors:
+        drivers = fetch_drivers_by_constructor(year, constructor.constructor_id)
+        for driver in drivers:
+            pairs.append((constructor, driver))
+    
+    return pairs
+
+
+def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverData]:
+    drivers_data = _fetch_data(year, f"/constructors/{constructor_id}/drivers/")
+    if drivers_data is None:
+        print("Sorry, something went wrong")
+        return []
+    drivers = drivers_data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])
+    driver_info = [DriverData(driver.get("permanentNumber", ""), driver.get("givenName", ""), driver.get("familyName", ""), driver.get("nationality")) for driver in drivers]
+    return driver_info   
 
 
 def _convert_to_dt(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
 
-def fetch_races(year: int) -> dict[str, dict] | None:
+def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
     """
     Retrieve historical data from Jolpica F1 API:
     """
     try:
-        response = httpx.get(f"{JOLPICA_ENDPOINT}/{str(year)}/{RACES}/")
+        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{endpoint}/")
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
