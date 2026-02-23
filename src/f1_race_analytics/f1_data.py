@@ -13,11 +13,14 @@ class Event(NamedTuple):
 
 
 class ConstructorData(NamedTuple):
+    # Identifies the constructor in the API database
+    constructor_id: str 
     name: str
     nationality: str
 
 
 class DriverData(NamedTuple):
+    number: str
     first_name: str
     last_name: str
     nationality: str
@@ -45,21 +48,30 @@ def fetch_constructors(year) -> list[ConstructorData] | list[None]:
         print("Sorry, something went wrong")
         return []
     constructors = constructors_data.get("MRData", {}).get("ConstructorTable", {}).get("Constructors", [])
-    constructor_info = [ConstructorData(constructor.get("name", ""), constructor.get("nationality", "")) for constructor in constructors]
+    constructor_info = [ConstructorData(constructor.get("constructorId", ""), constructor.get("name", ""), constructor.get("nationality", "")) for constructor in constructors]
     return constructor_info
 
 
-def fetch_drivers(year) -> list[DriverData] | list[None]:
-    """
-    Get the drivers for the current year
-    """
-    drivers_data = _fetch_data(year, "drivers")
+def fetch_constructor_driver_pairs(year: int) -> list[tuple[ConstructorData, DriverData]]:
+    constructors = fetch_constructors(year) 
+    
+    pairs = []
+    for constructor in constructors:
+        drivers = fetch_drivers_by_constructor(year, constructor.constructor_id)
+        for driver in drivers:
+            pairs.append((constructor, driver))
+    
+    return pairs
+
+
+def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverData]:
+    drivers_data = _fetch_data(year, f"/constructors/{constructor_id}/drivers/")
     if drivers_data is None:
         print("Sorry, something went wrong")
         return []
     drivers = drivers_data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])
-    driver_info = [DriverData(driver.get("givenName", ""), driver.get("familyName", ""), driver.get("nationality", "")) for driver in drivers]
-    return driver_info
+    driver_info = [DriverData(driver.get("permanentNumber", ""), driver.get("givenName", ""), driver.get("familyName", ""), driver.get("nationality")) for driver in drivers]
+    return driver_info   
 
 
 def _convert_to_dt(d: str) -> date:
