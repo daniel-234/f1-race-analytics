@@ -36,7 +36,7 @@ def create_championship(year: int, constructor_driver_pairs: list[tuple[Construc
         for constructor_data, driver_data in constructor_driver_pairs:
             # reuse constructor if already created
             if constructor_data.constructor_id not in constructors:
-                constructor = Constructor(name=constructor_data.name, nationality=constructor_data.nationality)
+                constructor = Constructor(constructor_id=constructor_data.constructor_id, name=constructor_data.name, nationality=constructor_data.nationality)
                 session.add(constructor)
                 session.flush()
                 constructors[constructor_data.constructor_id] = constructor

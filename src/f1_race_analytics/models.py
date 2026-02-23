@@ -20,6 +20,7 @@ class Race(SQLModel, table=True):
 
 class Constructor(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    constructor_id: str
     name: str
     nationality: str 
 
@@ -28,6 +29,7 @@ class Constructor(SQLModel, table=True):
 
 class Driver(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    number: str
     first_name: str
     last_name: str
     nationality: str
