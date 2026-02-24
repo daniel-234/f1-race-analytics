@@ -55,9 +55,4 @@ def create_championship(year: int, constructor_driver_pairs: list[tuple[Construc
 
         session.commit()
 
-        # Print results
-        for link in championship.entry_links:
-            session.refresh(link)
-            print(f"{link.constructor.name} -> {link.driver.first_name} {link.driver.last_name}")
-
     return championship
