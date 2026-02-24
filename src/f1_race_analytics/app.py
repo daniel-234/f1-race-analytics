@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine
 from .models import Championship, Race, Constructor, Driver, ChampionshipEntryLink
-from .f1_data import Event, ConstructorData, DriverData, fetch_constructor_driver_pairs
+from .f1_data import Event, ConstructorData, DriverData   
 
 
 def create_races(year: int, races_data: list[Event]) -> Championship:
@@ -21,9 +21,10 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     return championship
 
 
-def create_championship(year: int) -> Championship:
-    pairs = fetch_constructor_driver_pairs(year)  # returns list[tuple[ConstructorData, DriverData]]
-
+def create_championship(year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]) -> Championship:
+    """
+    Create the championship and the linked tables for constructors and their drivers
+    """
     with Session(engine) as session:
         championship = Championship(year=year)
         session.add(championship)
@@ -32,10 +33,10 @@ def create_championship(year: int) -> Championship:
 
         constructors = {}  # cache by constructor_id to avoid duplicates
 
-        for constructor_data, driver_data in pairs:
+        for constructor_data, driver_data in constructor_driver_pairs:
             # reuse constructor if already created
             if constructor_data.constructor_id not in constructors:
-                constructor = Constructor(name=constructor_data.name, nationality=constructor_data.nationality)
+                constructor = Constructor(constructor_id=constructor_data.constructor_id, name=constructor_data.name, nationality=constructor_data.nationality)
                 session.add(constructor)
                 session.flush()
                 constructors[constructor_data.constructor_id] = constructor
@@ -53,10 +54,5 @@ def create_championship(year: int) -> Championship:
             session.add(link)
 
         session.commit()
-
-        # Print results
-        for link in championship.entry_links:
-            session.refresh(link)
-            print(f"{link.constructor.name} -> {link.driver.first_name} {link.driver.last_name}")
 
     return championship

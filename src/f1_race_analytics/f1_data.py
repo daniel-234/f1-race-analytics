@@ -60,7 +60,6 @@ def fetch_constructor_driver_pairs(year: int) -> list[tuple[ConstructorData, Dri
         drivers = fetch_drivers_by_constructor(year, constructor.constructor_id)
         for driver in drivers:
             pairs.append((constructor, driver))
-    
     return pairs
 
 
