@@ -45,8 +45,6 @@ def test_create_races(race_events):
 
 def test_create_championship(constructor_driver_pairs):
     create_championship(2026, constructor_driver_pairs)
-
-
     with Session(engine) as read_session:
         all_championships = read_session.exec(select(Championship)).all()
         all_links = read_session.exec(select(ChampionshipEntryLink)).all()
@@ -69,9 +67,74 @@ def test_create_championship(constructor_driver_pairs):
 
 def test_contructor_drivers_association(constructor_driver_pairs):
     create_championship(2026, constructor_driver_pairs)
-    
     with Session(engine) as read_session:
         championship = read_session.exec(select(Championship).where(Championship.year == 2026)).first()
         links = read_session.exec(select(ChampionshipEntryLink).where(ChampionshipEntryLink.championship_id == championship.id)).all()
         pairs = [(link.constructor, link.driver) for link in links]
         assert pairs[2] == (Constructor(nationality='British', constructor_id='aston_martin', name='Aston Martin', id=2), Driver(last_name='Alonso', id=3, number='14', first_name='Fernando', nationality='Spanish'))
+
+
+def test_championship_entry_link():
+    """
+    Test the 3-way link table (ChampionshipEntryLink) that connects
+    Championship, Constructor, and Driver.
+    This pattern allows us to model: "Driver X drove for Constructor Y
+    in Championship Z" - a many-to-many-to-many relationship.
+    """
+    from sqlmodel import Session
+    from f1_race_analytics.database import engine
+    from f1_race_analytics.models import Championship
+
+    with Session(engine) as session:
+        # Step 1: Create the parent entities independently
+        championship = Championship(year=2025)
+        session.add(championship)
+        session.commit()
+        session.refresh(championship)
+
+        # Fix - add constructor_id:
+        ferrari = Constructor(constructor_id="ferrari", name="Ferrari", nationality="Italian")
+        mercedes = Constructor(constructor_id="mercedes", name="Mercedes", nationality="German")
+        session.add_all([ferrari, mercedes])
+        session.commit()
+        session.refresh(ferrari)
+        session.refresh(mercedes)
+
+        # Wrong - missing number:
+        # Fix - add number:
+        leclerc = Driver(number="16", first_name="Charles", last_name="Leclerc", nationality="Monegasque")
+        hamilton = Driver(number="44", first_name="Lewis", last_name="Hamilton", nationality="British")
+        session.add_all([leclerc, hamilton])
+        session.commit()
+        session.refresh(leclerc)
+        session.refresh(hamilton)
+
+        # Step 2: Create the link entries using the IDs from the parent entities
+        # Each link represents: "This driver drove for this constructor in this championship"
+        link1 = ChampionshipEntryLink(
+            championship_id=championship.id,
+            constructor_id=ferrari.id,
+            driver_id=leclerc.id,
+        )
+        link2 = ChampionshipEntryLink(
+            championship_id=championship.id,
+            constructor_id=mercedes.id,
+            driver_id=hamilton.id,
+        )
+        session.add_all([link1, link2])
+        session.commit()
+
+        # Step 3: Verify navigation from Championship -> entries
+        session.refresh(championship)
+        assert len(championship.entry_links) == 2
+
+        # Step 4: Verify navigation from Constructor -> entries -> Driver
+        session.refresh(ferrari)
+        assert len(ferrari.entry_links) == 1
+        assert ferrari.entry_links[0].driver.last_name == "Leclerc"
+
+        # Step 5: Verify navigation from Driver -> entries -> Constructor and Championship
+        session.refresh(hamilton)
+        assert len(hamilton.entry_links) == 1
+        assert hamilton.entry_links[0].constructor.name == "Mercedes"
+        assert hamilton.entry_links[0].championship.year == 2025
