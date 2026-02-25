@@ -1,8 +1,8 @@
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from .database import create_db_and_tables, engine
-from .models import Championship, Race, Constructor, Driver, ChampionshipEntryLink
-from .f1_data import Event, ConstructorData, DriverData   
+from .database import engine
+from .f1_data import ConstructorData, DriverData, Event
+from .models import Championship, ChampionshipEntryLink, Constructor, Driver, Race
 
 
 def create_races(year: int, races_data: list[Event]) -> Championship:
@@ -17,11 +17,13 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
         session.add_all(races)
         session.commit()
         session.refresh(championship, attribute_names=["year", "races"])
-        
+
     return championship
 
 
-def create_championship(year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]) -> Championship:
+def create_championship(
+    year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
+) -> Championship:
     """
     Create the championship and the linked tables for constructors and their drivers
     """
@@ -36,12 +38,21 @@ def create_championship(year: int, constructor_driver_pairs: list[tuple[Construc
         for constructor_data, driver_data in constructor_driver_pairs:
             # reuse constructor if already created
             if constructor_data.constructor_id not in constructors:
-                constructor = Constructor(constructor_id=constructor_data.constructor_id, name=constructor_data.name, nationality=constructor_data.nationality)
+                constructor = Constructor(
+                    constructor_id=constructor_data.constructor_id,
+                    name=constructor_data.name,
+                    nationality=constructor_data.nationality,
+                )
                 session.add(constructor)
                 session.flush()
                 constructors[constructor_data.constructor_id] = constructor
 
-            driver = Driver(number=driver_data.number, first_name=driver_data.first_name, last_name=driver_data.last_name, nationality=driver_data.nationality) 
+            driver = Driver(
+                number=driver_data.number,
+                first_name=driver_data.first_name,
+                last_name=driver_data.last_name,
+                nationality=driver_data.nationality,
+            )
             session.add(driver)
             session.commit()
             session.refresh(driver)
@@ -49,7 +60,7 @@ def create_championship(year: int, constructor_driver_pairs: list[tuple[Construc
             link = ChampionshipEntryLink(
                 championship_id=championship.id,
                 constructor_id=constructors[constructor_data.constructor_id].id,
-                driver_id=driver.id
+                driver_id=driver.id,
             )
             session.add(link)
 

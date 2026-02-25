@@ -1,7 +1,7 @@
-import httpx
+from datetime import date, datetime
 from typing import NamedTuple
-from datetime import datetime, date
 
+import httpx
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
 RACES = "races"
@@ -14,7 +14,7 @@ class Event(NamedTuple):
 
 class ConstructorData(NamedTuple):
     # Identifies the constructor in the API database
-    constructor_id: str 
+    constructor_id: str
     name: str
     nationality: str
 
@@ -35,7 +35,10 @@ def fetch_races(year) -> list[Event] | list[None]:
         print("Sorry, something went wrong")
         return []
     races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
-    race_info = [Event(race.get("raceName", ""), _convert_to_dt(race.get("date", ""))) for race in races]
+    race_info = [
+        Event(race.get("raceName", ""), _convert_to_dt(race.get("date", "")))
+        for race in races
+    ]
     return race_info
 
 
@@ -47,14 +50,27 @@ def fetch_constructors(year) -> list[ConstructorData] | list[None]:
     if constructors_data is None:
         print("Sorry, something went wrong")
         return []
-    constructors = constructors_data.get("MRData", {}).get("ConstructorTable", {}).get("Constructors", [])
-    constructor_info = [ConstructorData(constructor.get("constructorId", ""), constructor.get("name", ""), constructor.get("nationality", "")) for constructor in constructors]
+    constructors = (
+        constructors_data.get("MRData", {})
+        .get("ConstructorTable", {})
+        .get("Constructors", [])
+    )
+    constructor_info = [
+        ConstructorData(
+            constructor.get("constructorId", ""),
+            constructor.get("name", ""),
+            constructor.get("nationality", ""),
+        )
+        for constructor in constructors
+    ]
     return constructor_info
 
 
-def fetch_constructor_driver_pairs(year: int) -> list[tuple[ConstructorData, DriverData]]:
-    constructors = fetch_constructors(year) 
-    
+def fetch_constructor_driver_pairs(
+    year: int,
+) -> list[tuple[ConstructorData, DriverData]]:
+    constructors = fetch_constructors(year)
+
     pairs = []
     for constructor in constructors:
         drivers = fetch_drivers_by_constructor(year, constructor.constructor_id)
@@ -69,8 +85,16 @@ def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverD
         print("Sorry, something went wrong")
         return []
     drivers = drivers_data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])
-    driver_info = [DriverData(driver.get("permanentNumber", ""), driver.get("givenName", ""), driver.get("familyName", ""), driver.get("nationality")) for driver in drivers]
-    return driver_info   
+    driver_info = [
+        DriverData(
+            driver.get("permanentNumber", ""),
+            driver.get("givenName", ""),
+            driver.get("familyName", ""),
+            driver.get("nationality"),
+        )
+        for driver in drivers
+    ]
+    return driver_info
 
 
 def _convert_to_dt(d: str) -> date:
@@ -90,4 +114,4 @@ def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
         return None
     except httpx.RequestError as e:
         print(f"Network error: {e}")
-        return None 
+        return None
