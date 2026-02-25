@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from sqlmodel import Session, select
 
@@ -22,9 +24,9 @@ def setup_database():
 @pytest.fixture
 def race_events():
     return [
-        Event(name="Australian Grand Prix", date="2026-03-15"),
-        Event(name="Bahrain Grand Prix", date="2026-03-22"),
-        Event(name="Chinese Grand Prix", date="2026-03-29"),
+        Event(name="Australian Grand Prix", date=date(2026, 3, 15)),
+        Event(name="Bahrain Grand Prix", date=date(2026, 3, 22)),
+        Event(name="Chinese Grand Prix", date=date(2026, 3, 29)),
     ]
 
 
@@ -105,12 +107,16 @@ def test_create_championship(constructor_driver_pairs):
         championship = read_session.exec(
             select(Championship).where(Championship.year == 2026)
         ).first()
+
+        assert championship is not None
+
         links = read_session.exec(
             select(ChampionshipEntryLink).where(
                 ChampionshipEntryLink.championship_id == championship.id
             )
         ).all()
         pairs = [(link.constructor, link.driver) for link in links]
+
         assert championship.year == 2026
         assert pairs == [
             (
@@ -182,6 +188,9 @@ def test_contructor_drivers_association(constructor_driver_pairs):
         championship = read_session.exec(
             select(Championship).where(Championship.year == 2026)
         ).first()
+
+        assert championship is not None
+
         links = read_session.exec(
             select(ChampionshipEntryLink).where(
                 ChampionshipEntryLink.championship_id == championship.id

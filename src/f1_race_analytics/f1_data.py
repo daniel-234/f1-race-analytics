@@ -26,7 +26,7 @@ class DriverData(NamedTuple):
     nationality: str
 
 
-def fetch_races(year) -> list[Event] | list[None]:
+def fetch_races(year: int) -> list[Event]:
     """
     Get the races for the given year
     """
@@ -42,7 +42,7 @@ def fetch_races(year) -> list[Event] | list[None]:
     return race_info
 
 
-def fetch_constructors(year) -> list[ConstructorData] | list[None]:
+def fetch_constructors(year: int) -> list[ConstructorData]:
     """
     Get the constructors for the given year
     """
