@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
 sqlite_url = "sqlite:///:memory:"
 engine = create_engine(sqlite_url, echo=False)
@@ -10,3 +10,8 @@ def create_db_and_tables():
 
 def clear_db_and_tables():
     SQLModel.metadata.drop_all(engine)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
