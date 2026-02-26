@@ -1,8 +1,18 @@
+from fastapi import FastAPI
+
 from .app import create_championship, create_races
 from .database import create_db_and_tables
 from .f1_data import fetch_constructor_driver_pairs, fetch_races
 
 YEAR = 2026
+
+
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return {"Project": "F1 Race Analytics"}
 
 
 def main():
