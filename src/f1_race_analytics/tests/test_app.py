@@ -3,8 +3,13 @@ from datetime import date
 import pytest
 from sqlmodel import Session, select
 
-from f1_race_analytics.app import create_championship, create_races
-from f1_race_analytics.database import clear_db_and_tables, create_db_and_tables, engine
+from f1_race_analytics.database import (
+    clear_db_and_tables,
+    create_championship,
+    create_db_and_tables,
+    create_races,
+    engine,
+)
 from f1_race_analytics.f1_data import ConstructorData, DriverData, Event
 from f1_race_analytics.models import (
     Championship,
