@@ -29,9 +29,30 @@ def setup_database():
 @pytest.fixture
 def race_events():
     return [
-        Event(name="Australian Grand Prix", date=date(2026, 3, 15)),
-        Event(name="Bahrain Grand Prix", date=date(2026, 3, 22)),
-        Event(name="Chinese Grand Prix", date=date(2026, 3, 29)),
+        Event(
+            name="Australian Grand Prix",
+            circuit_id="albert_park",
+            date=date(2026, 3, 8),
+            circuit_name="Albert Park Grand Prix Circuit",
+            circuit_locality="Melbourne",
+            circuit_country="Australia",
+        ),
+        Event(
+            name="Chinese Grand Prix",
+            circuit_id="shanghai",
+            date=date(2026, 3, 15),
+            circuit_name="Shanghai International Circuit",
+            circuit_locality="Shanghai",
+            circuit_country="China",
+        ),
+        Event(
+            name="Japanese Grand Prix",
+            circuit_id="suzuka",
+            date=date(2026, 3, 29),
+            circuit_name="Suzuka Circuit",
+            circuit_locality="Suzuka",
+            circuit_country="Japan",
+        ),
     ]
 
 
@@ -94,9 +115,36 @@ def test_create_races(race_events):
     assert championship.id == 1
     assert championship.year == 2026
     assert championship.races == [
-        Race(id=1, name="Australian Grand Prix", championship_id=1),
-        Race(id=2, name="Bahrain Grand Prix", championship_id=1),
-        Race(id=3, name="Chinese Grand Prix", championship_id=1),
+        Race(
+            date=date(2026, 3, 8),
+            id=1,
+            circuit_locality="Melbourne",
+            championship_id=1,
+            name="Australian Grand Prix",
+            circuit_id="albert_park",
+            circuit_name="Albert Park Grand Prix Circuit",
+            circuit_country="Australia",
+        ),
+        Race(
+            date=date(2026, 3, 15),
+            id=2,
+            circuit_locality="Shanghai",
+            championship_id=1,
+            name="Chinese Grand Prix",
+            circuit_id="shanghai",
+            circuit_name="Shanghai International Circuit",
+            circuit_country="China",
+        ),
+        Race(
+            date=date(2026, 3, 29),
+            id=3,
+            circuit_locality="Suzuka",
+            championship_id=1,
+            name="Japanese Grand Prix",
+            circuit_id="suzuka",
+            circuit_name="Suzuka Circuit",
+            circuit_country="Japan",
+        ),
     ]
 
 

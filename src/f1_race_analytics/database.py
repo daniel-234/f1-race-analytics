@@ -27,12 +27,22 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     with Session(engine) as session:
         championship = Championship(year=year)
 
-        races = [Race(name=race.name, championship=championship) for race in races_data]
+        races = [
+            Race(
+                name=race.name,
+                circuit_id=race.circuit_id,
+                date=race.date,
+                circuit_name=race.circuit_name,
+                circuit_locality=race.circuit_locality,
+                circuit_country=race.circuit_country,
+                championship=championship,
+            )
+            for race in races_data
+        ]
 
         session.add_all(races)
         session.commit()
         session.refresh(championship, attribute_names=["year", "races"])
-
     return championship
 
 

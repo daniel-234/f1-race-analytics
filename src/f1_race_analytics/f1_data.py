@@ -9,7 +9,11 @@ RACES = "races"
 
 class Event(NamedTuple):
     name: str
+    circuit_id: str
     date: date
+    circuit_name: str
+    circuit_locality: str
+    circuit_country: str
 
 
 class ConstructorData(NamedTuple):
@@ -36,7 +40,14 @@ def fetch_races(year: int) -> list[Event]:
         return []
     races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
     race_info = [
-        Event(race.get("raceName", ""), _convert_to_dt(race.get("date", "")))
+        Event(
+            race.get("raceName", ""),
+            race.get("Circuit", {}).get("circuitId", ""),
+            _convert_to_dt(race.get("date", "")),
+            race.get("Circuit", {}).get("circuitName", ""),
+            race.get("Circuit", {}).get("Location", {}).get("locality", ""),
+            race.get("Circuit", {}).get("Location", {}).get("country", ""),
+        )
         for race in races
     ]
     return race_info
@@ -110,7 +121,9 @@ def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
-        print(f"Failed to fetch races for {year}: {e.response.status_code}")
+        print(
+            f"Failed to fetch data for {endpoint} for season {year}: {e.response.status_code}"
+        )
         return None
     except httpx.RequestError as e:
         print(f"Network error: {e}")
