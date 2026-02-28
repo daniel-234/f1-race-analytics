@@ -1,4 +1,6 @@
-from sqlmodel import Session, SQLModel, create_engine
+from collections.abc import Sequence
+
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from .f1_data import ConstructorData, DriverData, Event
 from .models import Championship, ChampionshipEntryLink, Constructor, Driver, Race
@@ -18,6 +20,20 @@ def clear_db_and_tables():
 def get_session():
     with Session(engine) as session:
         yield session
+
+
+def get_all_races(session: Session) -> Sequence[Race]:
+    """
+    Retrieve all races from the database
+    """
+    statement = select(Race)
+    races = session.exec(statement).all()
+    print(races)
+    return races
+
+
+def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
+    pass
 
 
 def create_races(year: int, races_data: list[Event]) -> Championship:
