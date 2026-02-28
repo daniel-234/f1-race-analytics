@@ -28,12 +28,13 @@ def get_all_races(session: Session) -> Sequence[Race]:
     """
     statement = select(Race)
     races = session.exec(statement).all()
-    print(races)
     return races
 
 
 def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
-    pass
+    statement = select(Race).where(Race.circuit_id == circuit_id)
+    race = session.exec(statement).first()
+    return race
 
 
 def create_races(year: int, races_data: list[Event]) -> Championship:
