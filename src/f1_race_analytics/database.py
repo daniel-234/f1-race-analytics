@@ -5,7 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from .f1_data import ConstructorData, DriverData, Event
 from .models import Championship, ChampionshipEntryLink, Constructor, Driver, Race
 
-sqlite_url = "sqlite:///:memory:"
+sqlite_url = "sqlite:///database.db"
 engine = create_engine(sqlite_url, echo=False)
 
 
