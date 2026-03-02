@@ -1,5 +1,4 @@
-from .app import create_championship, create_races
-from .database import create_db_and_tables
+from .database import create_championship, create_db_and_tables, create_races
 from .f1_data import fetch_constructor_driver_pairs, fetch_races
 
 YEAR = 2026

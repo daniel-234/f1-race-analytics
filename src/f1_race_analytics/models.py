@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -15,6 +17,11 @@ class Championship(SQLModel, table=True):
 class Race(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
+    circuit_id: str
+    date: date
+    circuit_name: str
+    circuit_locality: str
+    circuit_country: str
 
     championship_id: int | None = Field(default=None, foreign_key="championship.id")
     championship: Championship | None = Relationship(back_populates="races")
