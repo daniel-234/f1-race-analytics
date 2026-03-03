@@ -1,69 +1,48 @@
+from collections.abc import AsyncGenerator, Sequence
+from contextlib import asynccontextmanager
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
 from sqlmodel import Session
 
-from .database import engine
-from .f1_data import ConstructorData, DriverData, Event
-from .models import Championship, ChampionshipEntryLink, Constructor, Driver, Race
+from .database import (
+    create_db_and_tables,
+    create_races,
+    get_all_races,
+    get_race_by_circuit_id,
+    get_session,
+)
+from .f1_data import fetch_races
+from .models import Race
 
 
-def create_races(year: int, races_data: list[Event]) -> Championship:
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """ "
+    Create tables; fetch and create races
     """
-    Create the chanpionship and races instances for the given year
-    """
-    with Session(engine) as session:
-        championship = Championship(year=year)
-
-        races = [Race(name=race.name, championship=championship) for race in races_data]
-
-        session.add_all(races)
-        session.commit()
-        session.refresh(championship, attribute_names=["year", "races"])
-
-    return championship
+    create_db_and_tables()
+    races_data = fetch_races(2026)
+    create_races(2026, races_data)
+    yield
 
 
-def create_championship(
-    year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
-) -> Championship:
-    """
-    Create the championship and the linked tables for constructors and their drivers
-    """
-    with Session(engine) as session:
-        championship = Championship(year=year)
-        session.add(championship)
-        session.commit()
-        session.refresh(championship)
+app = FastAPI(title="F1 Race Analytics API", lifespan=lifespan)
 
-        constructors = {}  # cache by constructor_id to avoid duplicates
 
-        for constructor_data, driver_data in constructor_driver_pairs:
-            # reuse constructor if already created
-            if constructor_data.constructor_id not in constructors:
-                constructor = Constructor(
-                    constructor_id=constructor_data.constructor_id,
-                    name=constructor_data.name,
-                    nationality=constructor_data.nationality,
-                )
-                session.add(constructor)
-                session.flush()
-                constructors[constructor_data.constructor_id] = constructor
+def populate_db():
+    create_db_and_tables()
+    races_data = fetch_races(2026)
+    create_races(2026, races_data)
 
-            driver = Driver(
-                number=driver_data.number,
-                first_name=driver_data.first_name,
-                last_name=driver_data.last_name,
-                nationality=driver_data.nationality,
-            )
-            session.add(driver)
-            session.commit()
-            session.refresh(driver)
 
-            link = ChampionshipEntryLink(
-                championship_id=championship.id,
-                constructor_id=constructors[constructor_data.constructor_id].id,
-                driver_id=driver.id,
-            )
-            session.add(link)
+@app.get("/races")
+def list_races(session: Annotated[Session, Depends(get_session)]) -> Sequence[Race]:
+    return get_all_races(session)
 
-        session.commit()
 
-    return championship
+@app.get("/races/{circuit_id}")
+def get_race(
+    circuit_id: str, session: Annotated[Session, Depends(get_session)]
+) -> Race | None:
+    return get_race_by_circuit_id(session, circuit_id)
