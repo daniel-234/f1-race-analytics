@@ -4,7 +4,7 @@ from typing import NamedTuple
 import httpx
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
-RACES = "races"
+# RACES = "races"
 
 
 class Event(NamedTuple):
@@ -24,10 +24,18 @@ class ConstructorData(NamedTuple):
 
 
 class DriverData(NamedTuple):
+    driver_id: str
     number: str
     first_name: str
     last_name: str
     nationality: str
+
+
+class ResultData(NamedTuple):
+    circuit_id: str
+    driver_id: str
+    position: int
+    points: int
 
 
 def fetch_races(year: int) -> list[Event]:
@@ -98,14 +106,39 @@ def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverD
     drivers = drivers_data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])
     driver_info = [
         DriverData(
+            driver.get("driverId", ""),
             driver.get("permanentNumber", ""),
             driver.get("givenName", ""),
             driver.get("familyName", ""),
-            driver.get("nationality"),
+            driver.get("nationality", ""),
         )
         for driver in drivers
     ]
     return driver_info
+
+
+def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
+    race_data = _fetch_data(year, f"circuits/{circuit_id}/results/")
+    if race_data is None:
+        print(f"No result for circuit {circuit_id}")
+        return []
+    # Get the single object returned by the API from the "Races" list
+    results = (
+        race_data.get("MRData", {})
+        .get("RaceTable", {})
+        .get("Races", [])[0]
+        .get("Results", [])
+    )
+    result_info = [
+        ResultData(
+            circuit_id,
+            result.get("Driver", {}).get("driverId", ""),
+            result.get("position", ""),
+            result.get("points", ""),
+        )
+        for result in results
+    ]
+    return result_info
 
 
 def _convert_to_dt(d: str) -> date:

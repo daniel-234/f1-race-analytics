@@ -64,6 +64,7 @@ def constructor_driver_pairs():
                 constructor_id="alpine", name="Alpine F1 Team", nationality="French"
             ),
             DriverData(
+                driver_id="colapinto",
                 number="43",
                 first_name="Franco",
                 last_name="Colapinto",
@@ -75,6 +76,7 @@ def constructor_driver_pairs():
                 constructor_id="alpine", name="Alpine F1 Team", nationality="French"
             ),
             DriverData(
+                driver_id="gasly",
                 number="10",
                 first_name="Pierre",
                 last_name="Gasly",
@@ -88,6 +90,7 @@ def constructor_driver_pairs():
                 nationality="British",
             ),
             DriverData(
+                driver_id="alonso",
                 number="14",
                 first_name="Fernando",
                 last_name="Alonso",
@@ -101,6 +104,7 @@ def constructor_driver_pairs():
                 nationality="British",
             ),
             DriverData(
+                driver_id="stroll",
                 number="18",
                 first_name="Lance",
                 last_name="Stroll",
@@ -180,6 +184,7 @@ def test_create_championship(constructor_driver_pairs):
                     id=1,
                 ),
                 Driver(
+                    driver_id="colapinto",
                     last_name="Colapinto",
                     id=1,
                     number="43",
@@ -195,6 +200,7 @@ def test_create_championship(constructor_driver_pairs):
                     id=1,
                 ),
                 Driver(
+                    driver_id="gasly",
                     last_name="Gasly",
                     id=2,
                     number="10",

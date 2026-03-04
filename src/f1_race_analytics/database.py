@@ -2,8 +2,15 @@ from collections.abc import Sequence
 
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from .f1_data import ConstructorData, DriverData, Event
-from .models import Championship, ChampionshipEntryLink, Constructor, Driver, Race
+from .f1_data import ConstructorData, DriverData, Event, ResultData
+from .models import (
+    Championship,
+    ChampionshipEntryLink,
+    Constructor,
+    Driver,
+    Race,
+    RaceResult,
+)
 
 sqlite_url = "sqlite:///database.db"
 engine = create_engine(sqlite_url, echo=False)
@@ -63,6 +70,7 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     return championship
 
 
+# TODO: Check UI for a button to call this function
 def create_championship(
     year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
 ) -> Championship:
@@ -90,6 +98,7 @@ def create_championship(
                 constructors[constructor_data.constructor_id] = constructor
 
             driver = Driver(
+                driver_id=driver_data.driver_id,
                 number=driver_data.number,
                 first_name=driver_data.first_name,
                 last_name=driver_data.last_name,
@@ -109,3 +118,33 @@ def create_championship(
         session.commit()
 
     return championship
+
+
+def create_results(year: int, race_result_data: list[ResultData]) -> RaceResult:
+    """
+    Create the RaceResult table, linking results to races for a given year
+    """
+    with Session(engine) as session:
+        championship = Championship(year=year)
+        session.add(championship)
+        session.commit()
+        session.refresh(championship)
+
+        results = [
+            RaceResult(
+                race_id=race_result.circuit_id,
+                driver_id=race_result.driver_id,
+                position=race_result.position,
+                points=race_result.points,
+            )
+            for race_result in race_result_data
+        ]
+
+        session.add_all(results)
+        session.commit()
+
+        # refresh each RaceResult object
+        for result in results:
+            session.refresh(result)
+
+    return results

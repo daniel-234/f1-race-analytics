@@ -15,6 +15,8 @@ from .database import (
 from .f1_data import fetch_races
 from .models import Race
 
+YEAR = 2025
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -24,6 +26,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     create_db_and_tables()
     races_data = fetch_races(2026)
     create_races(2026, races_data)
+    # circuit = fetch_results_by_race(YEAR, "monza")
+    # create_results(YEAR, circuit)
     yield
 
 

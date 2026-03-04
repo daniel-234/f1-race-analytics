@@ -23,10 +23,12 @@ class Race(SQLModel, table=True):
     circuit_locality: str
     circuit_country: str
 
+    # M-to-1 link to Championsip
     championship_id: int | None = Field(default=None, foreign_key="championship.id")
     championship: Championship | None = Relationship(back_populates="races")
 
-    # TODO: add relation race <> driver
+    # M-to-M link to RaceResult
+    results: list["RaceResult"] = Relationship(back_populates="race")
 
 
 class Constructor(SQLModel, table=True):
@@ -35,6 +37,7 @@ class Constructor(SQLModel, table=True):
     name: str
     nationality: str
 
+    # 3-way M-to-M link to Championship and Driver
     entry_links: list["ChampionshipEntryLink"] = Relationship(
         back_populates="constructor"
     )
@@ -47,8 +50,11 @@ class Driver(SQLModel, table=True):
     last_name: str
     nationality: str
 
+    # 3-way M-to-M link to Championship and Constructor
     entry_links: list["ChampionshipEntryLink"] = Relationship(back_populates="driver")
-    # TODO: add relation race <> driver
+
+    # M-to-M link to RaceResult
+    results: list["RaceResult"] = Relationship(back_populates="driver")
 
 
 class ChampionshipEntryLink(SQLModel, table=True):
@@ -70,3 +76,17 @@ class ChampionshipEntryLink(SQLModel, table=True):
     championship: "Championship" = Relationship(back_populates="entry_links")
     constructor: "Constructor" = Relationship(back_populates="entry_links")
     driver: "Driver" = Relationship(back_populates="entry_links")
+
+
+class RaceResult(SQLModel, table=True):
+    race_id: int | None = Field(default=None, foreign_key="race.id", primary_key=True)
+    driver_id: int | None = Field(
+        default=None, foreign_key="driver.id", primary_key=True
+    )
+
+    # Relationship context: data that belongs to the combination Race-Driver
+    position: int
+    points: int
+
+    race: "Race" = Relationship(back_populates="results")
+    driver: "Driver" = Relationship(back_populates="results")
