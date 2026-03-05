@@ -7,7 +7,7 @@ from .database import (
 )
 from .f1_data import fetch_constructor_driver_pairs, fetch_races, fetch_results_by_race
 
-YEAR = 2025
+YEAR = 2026
 
 
 def main():

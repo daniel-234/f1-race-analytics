@@ -90,44 +90,48 @@ def create_championship(
         if championship is None:
             championship = Championship(year=year)
 
-        session.add(championship)
-        session.commit()
-        session.refresh(championship)
-
-        constructors = {}  # cache by constructor_id to avoid duplicates
-
         for constructor_data, driver_data in constructor_driver_pairs:
-            # reuse constructor if already created
-            if constructor_data.constructor_id not in constructors:
-                constructor = Constructor(
+            constructors = [
+                Constructor(
                     constructor_id=constructor_data.constructor_id,
                     name=constructor_data.name,
                     nationality=constructor_data.nationality,
                 )
-                session.add(constructor)
-                session.flush()
-                constructors[constructor_data.constructor_id] = constructor
+                for constructor in constructor_data
+            ]
 
-            driver = Driver(
-                driver_id=driver_data.driver_id,
-                number=driver_data.number,
-                first_name=driver_data.first_name,
-                last_name=driver_data.last_name,
-                nationality=driver_data.nationality,
-            )
-            session.add(driver)
-            session.commit()
-            session.refresh(driver)
+            session.add_all(constructors)
 
-            link = ChampionshipEntryLink(
+            drivers = [
+                Driver(
+                    driver_id=driver_data.driver_id,
+                    number=driver_data.number,
+                    first_name=driver_data.first_name,
+                    last_name=driver_data.last_name,
+                    nationality=driver_data.nationality,
+                )
+                for driver in driver_data
+            ]
+
+            session.add_all(drivers)
+
+            session.flush()
+
+        links = [
+            ChampionshipEntryLink(
                 championship_id=championship.id,
-                constructor_id=constructors[constructor_data.constructor_id].id,
+                constructor_id=constructor.id,
                 driver_id=driver.id,
             )
-            session.add(link)
+            for constructor in constructors
+            for driver in drivers
+        ]
+        session.add_all(links)
 
         session.commit()
 
+        session.refresh(championship)
+        print(championship.entry_links)
     return championship
 
 
@@ -136,6 +140,10 @@ def create_results(year: int, race_result_data: list[ResultData]) -> list[RaceRe
     Create the RaceResult table, linking results to races for a given year
     """
     with Session(engine) as session:
+        statement = select(Championship).where(Championship.year == year)
+        championship = session.exec(statement).first()
+        if championship is None:
+            championship = Championship(year=year)
         results = [
             RaceResult(
                 race_id=race_result.circuit_id,
