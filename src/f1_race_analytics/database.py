@@ -46,9 +46,11 @@ def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
 
 def get_result_by_circuit_id(
     session: Session, circuit_id: str
-) -> list[RaceResult] | None:
+) -> Sequence[RaceResult] | None:
     statement = select(Race).where(Race.circuit_id == circuit_id)
     race = session.exec(statement).first()
+    if race is None:
+        return
     saved_result = select(RaceResult).where(RaceResult.race_id == race.id)
     race_result = session.exec(saved_result).all()
     return race_result
@@ -61,6 +63,9 @@ def select_championship_by_year(year: int, session: Session) -> Championship:
     championship = session.exec(statement).first()
     if championship is None:
         championship = Championship(year=year)
+        session.add(championship)
+        session.commit()
+        session.refresh(championship)
     return championship
 
 
@@ -101,23 +106,38 @@ def create_championship(
         championship = select_championship_by_year(year, session)
 
         for constructor_data, driver_data in constructor_driver_pairs:
-            constructor = Constructor(
-                constructor_id=constructor_data.constructor_id,
-                name=constructor_data.name,
-                nationality=constructor_data.nationality,
-            )
-            driver = Driver(
-                driver_id=driver_data.driver_id,
-                number=driver_data.number,
-                first_name=driver_data.first_name,
-                last_name=driver_data.last_name,
-                nationality=driver_data.nationality,
-            )
-            session.add(constructor)
-            session.add(driver)
+            # Look up existing constructor, or create new
+            constructor = session.exec(
+                select(Constructor).where(
+                    Constructor.constructor_id == constructor_data.constructor_id
+                )
+            ).first()
+            if constructor is None:
+                constructor = Constructor(
+                    constructor_id=constructor_data.constructor_id,
+                    name=constructor_data.name,
+                    nationality=constructor_data.nationality,
+                )
+                session.add(constructor)
+            # Look up existing driver, or create new
+            driver = session.exec(
+                select(Driver).where(Driver.driver_id == driver_data.driver_id)
+            ).first()
+            if driver is None:
+                driver = Driver(
+                    driver_id=driver_data.driver_id,
+                    number=driver_data.number,
+                    first_name=driver_data.first_name,
+                    last_name=driver_data.last_name,
+                    nationality=driver_data.nationality,
+                )
+                session.add(driver)
             session.commit()
-            session.refresh(constructor)
-            session.refresh(driver)
+
+            if championship.id is None or constructor.id is None or driver.id is None:
+                raise ValueError(
+                    "Cannot create link: one or more entities have not been saved yet."
+                )
 
             link = ChampionshipEntryLink(
                 championship_id=championship.id,
@@ -127,7 +147,6 @@ def create_championship(
 
             session.add(link)
             session.commit()
-            session.refresh(link)
 
         session.refresh(championship)
 
@@ -136,37 +155,37 @@ def create_championship(
 
 def create_race_results(
     year: int, race_result_data: list[ResultData]
-) -> list[RaceResult]:
+) -> list[RaceResult] | None:
     """
     Create the RaceResult table, linking results to races for a given year
     """
     with Session(engine) as session:
-        championship = select_championship_by_year(year, session)
+        select_championship_by_year(year, session)
 
         race_statement = select(Race).where(
             Race.circuit_id == race_result_data[0].circuit_id
         )
         race = session.exec(race_statement).first()
-        # TODO See if it is still needed
-        drivers_statement = select(Driver)
-        session.exec(drivers_statement).all()
+        if race is None:
+            return
 
         for race_result in race_result_data:
+            # Get the driver by the API's driver_id, that is a string
+            # used inside the API to crossreference the endpoints.
             driver = session.exec(
                 select(Driver).where(Driver.driver_id == race_result.driver_id)
             ).first()
             if driver is None:
                 continue
+            # Use the Driver id primary key (int) as foreign key in the link table
             result = RaceResult(
                 race_id=race.id,
                 driver_id=driver.id,
-                position=race_result.position,
-                points=race_result.points,
+                position=int(race_result.position),
+                points=int(race_result.points),
             )
             session.add(result)
-            session.commit()
-            session.refresh(result)
 
-        session.refresh(championship)
-
-    return championship
+        session.commit()
+        race_results = race.results
+    return race_results

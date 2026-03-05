@@ -66,15 +66,9 @@ class ChampionshipEntryLink(SQLModel, table=True):
     It's 3-way because the driver<>constructor relationship changes every season.
     """
 
-    championship_id: int | None = Field(
-        default=None, foreign_key="championship.id", primary_key=True
-    )
-    constructor_id: int | None = Field(
-        default=None, foreign_key="constructor.id", primary_key=True
-    )
-    driver_id: int | None = Field(
-        default=None, foreign_key="driver.id", primary_key=True
-    )
+    championship_id: int = Field(foreign_key="championship.id", primary_key=True)
+    constructor_id: int = Field(foreign_key="constructor.id", primary_key=True)
+    driver_id: int = Field(foreign_key="driver.id", primary_key=True)
 
     championship: "Championship" = Relationship(back_populates="entry_links")
     constructor: "Constructor" = Relationship(back_populates="entry_links")

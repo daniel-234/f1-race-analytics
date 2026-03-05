@@ -1,3 +1,4 @@
+from .app import YEAR
 from .database import (
     clear_db_and_tables,
     create_championship,
@@ -7,7 +8,7 @@ from .database import (
 )
 from .f1_data import fetch_constructor_driver_pairs, fetch_races, fetch_results_by_race
 
-YEAR = 2025
+CIRCUIT_ID = "monza"
 
 
 def main():
@@ -17,7 +18,7 @@ def main():
     create_races(YEAR, races_data)
     constructor_driver_pairs = fetch_constructor_driver_pairs(YEAR)
     create_championship(YEAR, constructor_driver_pairs)
-    result_data = fetch_results_by_race(2025, "monza")
+    result_data = fetch_results_by_race(YEAR, CIRCUIT_ID)
     create_race_results(YEAR, result_data)
 
 

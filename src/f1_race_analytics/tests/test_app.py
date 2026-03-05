@@ -216,6 +216,7 @@ def test_create_championship(constructor_driver_pairs):
                     id=2,
                 ),
                 Driver(
+                    driver_id="alonso",
                     last_name="Alonso",
                     id=3,
                     number="14",
@@ -231,6 +232,7 @@ def test_create_championship(constructor_driver_pairs):
                     id=2,
                 ),
                 Driver(
+                    driver_id="stroll",
                     last_name="Stroll",
                     id=4,
                     number="18",
@@ -262,8 +264,9 @@ def test_contructor_drivers_association(constructor_driver_pairs):
                 constructor_id="aston_martin",
                 name="Aston Martin",
                 id=2,
-            ),
+            ),  # not 3
             Driver(
+                driver_id="alonso",
                 last_name="Alonso",
                 id=3,
                 number="14",
@@ -304,13 +307,18 @@ def test_championship_entry_link():
         session.refresh(mercedes)
 
         leclerc = Driver(
+            driver_id="leclerc",
             number="16",
             first_name="Charles",
             last_name="Leclerc",
             nationality="Monegasque",
         )
         hamilton = Driver(
-            number="44", first_name="Lewis", last_name="Hamilton", nationality="British"
+            driver_id="hamilton",
+            number="44",
+            first_name="Lewis",
+            last_name="Hamilton",
+            nationality="British",
         )
         session.add_all([leclerc, hamilton])
         session.commit()
@@ -319,11 +327,22 @@ def test_championship_entry_link():
 
         # Step 2: Create the link entries using the IDs from the parent entities
         # Each link represents: "This driver drove for this constructor in this championship"
+
+        # Ensure all entities were persisted before creating links
+        assert championship.id is not None
+        assert ferrari.id is not None
+        assert leclerc.id is not None
+
         link1 = ChampionshipEntryLink(
             championship_id=championship.id,
             constructor_id=ferrari.id,
             driver_id=leclerc.id,
         )
+
+        assert championship.id is not None
+        assert mercedes.id is not None
+        assert hamilton.id is not None
+
         link2 = ChampionshipEntryLink(
             championship_id=championship.id,
             constructor_id=mercedes.id,

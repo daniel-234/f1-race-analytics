@@ -25,10 +25,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Create tables; fetch and create races
     """
     create_db_and_tables()
-    races_data = fetch_races(2026)
-    create_races(2026, races_data)
-    # circuit = fetch_results_by_race(YEAR, "monza")
-    # create_results(YEAR, circuit)
+    races_data = fetch_races(YEAR)
+    create_races(YEAR, races_data)
     yield
 
 
@@ -56,5 +54,5 @@ def get_race(
 @app.get("/results/{circuit_id}")
 def get_race_result(
     circuit_id: str, session: Annotated[Session, Depends(get_session)]
-) -> list[RaceResult] | None:
+) -> Sequence[RaceResult] | None:
     return get_result_by_circuit_id(session, circuit_id)
