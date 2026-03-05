@@ -44,6 +44,12 @@ def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
     return race
 
 
+def get_result_by_race_id(session: Session, id: str) -> list[RaceResult] | None:
+    statement = select(RaceResult).where(Race.id == id)
+    race_result = session.exec(statement).all()
+    return race_result
+
+
 def create_races(year: int, races_data: list[Event]) -> Championship:
     """
     Create the championship and races instances for the given year
@@ -91,51 +97,42 @@ def create_championship(
             championship = Championship(year=year)
 
         for constructor_data, driver_data in constructor_driver_pairs:
-            constructors = [
-                Constructor(
-                    constructor_id=constructor_data.constructor_id,
-                    name=constructor_data.name,
-                    nationality=constructor_data.nationality,
-                )
-                for constructor in constructor_data
-            ]
+            constructor = Constructor(
+                constructor_id=constructor_data.constructor_id,
+                name=constructor_data.name,
+                nationality=constructor_data.nationality,
+            )
+            driver = Driver(
+                driver_id=driver_data.driver_id,
+                number=driver_data.number,
+                first_name=driver_data.first_name,
+                last_name=driver_data.last_name,
+                nationality=driver_data.nationality,
+            )
+            session.add(constructor)
+            session.add(driver)
+            session.commit()
+            session.refresh(constructor)
+            session.refresh(driver)
 
-            session.add_all(constructors)
-
-            drivers = [
-                Driver(
-                    driver_id=driver_data.driver_id,
-                    number=driver_data.number,
-                    first_name=driver_data.first_name,
-                    last_name=driver_data.last_name,
-                    nationality=driver_data.nationality,
-                )
-                for driver in driver_data
-            ]
-
-            session.add_all(drivers)
-
-            session.flush()
-
-        links = [
-            ChampionshipEntryLink(
+            link = ChampionshipEntryLink(
                 championship_id=championship.id,
                 constructor_id=constructor.id,
                 driver_id=driver.id,
             )
-            for constructor in constructors
-            for driver in drivers
-        ]
-        session.add_all(links)
 
-        session.commit()
+            session.add(link)
+            session.commit()
+            session.refresh(link)
 
         session.refresh(championship)
-        print(championship.entry_links)
+
     return championship
 
 
-def create_results(year: int, race_result_data: list[ResultData]) -> list[RaceResult]:
+def create_race_results(
+    year: int, race_result_data: list[ResultData]
+) -> list[RaceResult]:
     """
     Create the RaceResult table, linking results to races for a given year
     """
@@ -144,21 +141,30 @@ def create_results(year: int, race_result_data: list[ResultData]) -> list[RaceRe
         championship = session.exec(statement).first()
         if championship is None:
             championship = Championship(year=year)
-        results = [
-            RaceResult(
-                race_id=race_result.circuit_id,
-                driver_id=race_result.driver_id,
+        race_statement = select(Race).where(
+            Race.circuit_id == race_result_data[0].circuit_id
+        )
+        race = session.exec(race_statement).first()
+        # TODO See if it is still needed
+        drivers_statement = select(Driver)
+        session.exec(drivers_statement).all()
+
+        for race_result in race_result_data:
+            driver = session.exec(
+                select(Driver).where(Driver.driver_id == race_result.driver_id)
+            ).first()
+            if driver is None:
+                continue
+            result = RaceResult(
+                race_id=race.id,
+                driver_id=driver.id,
                 position=race_result.position,
                 points=race_result.points,
             )
-            for race_result in race_result_data
-        ]
-
-        session.add_all(results)
-        session.commit()
-
-        # refresh each RaceResult object
-        for result in results:
+            session.add(result)
+            session.commit()
             session.refresh(result)
 
-    return results
+        session.refresh(championship)
+
+    return championship

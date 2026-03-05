@@ -10,10 +10,11 @@ from .database import (
     create_races,
     get_all_races,
     get_race_by_circuit_id,
+    get_result_by_race_id,
     get_session,
 )
 from .f1_data import fetch_races
-from .models import Race
+from .models import Race, RaceResult
 
 YEAR = 2025
 
@@ -50,3 +51,10 @@ def get_race(
     circuit_id: str, session: Annotated[Session, Depends(get_session)]
 ) -> Race | None:
     return get_race_by_circuit_id(session, circuit_id)
+
+
+@app.get("/results/{race_id}")
+def get_race_result(
+    race_id: int, session: Annotated[Session, Depends(get_session)]
+) -> list[RaceResult] | None:
+    return get_result_by_race_id(session, race_id)

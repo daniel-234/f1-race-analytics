@@ -24,7 +24,7 @@ class ConstructorData(NamedTuple):
 
 
 class DriverData(NamedTuple):
-    # Identifies the driver in the driver database
+    # Identifies the driver in the API database
     driver_id: str
     number: str
     first_name: str
@@ -96,6 +96,7 @@ def fetch_constructor_driver_pairs(
         drivers = fetch_drivers_by_constructor(year, constructor.constructor_id)
         for driver in drivers:
             pairs.append((constructor, driver))
+    # print(pairs)
     return pairs
 
 

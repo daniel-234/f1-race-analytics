@@ -33,6 +33,7 @@ class Race(SQLModel, table=True):
 
 class Constructor(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    # Identifies the constructor in the API endpoints - different from the DB id above
     constructor_id: str
     name: str
     nationality: str
@@ -45,6 +46,8 @@ class Constructor(SQLModel, table=True):
 
 class Driver(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    # Identifies the driver in the API endpoints - different from the DB id above
+    driver_id: str
     number: str
     first_name: str
     last_name: str
