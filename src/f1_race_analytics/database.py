@@ -54,17 +54,22 @@ def get_result_by_circuit_id(
     return race_result
 
 
+def select_championship_by_year(year: int, session: Session) -> Championship:
+    # Check if there is already a Championship instance for "year";
+    # otherwise, create one
+    statement = select(Championship).where(Championship.year == year)
+    championship = session.exec(statement).first()
+    if championship is None:
+        championship = Championship(year=year)
+    return championship
+
+
 def create_races(year: int, races_data: list[Event]) -> Championship:
     """
     Create the championship and races instances for the given year
     """
     with Session(engine) as session:
-        # Check if there is already a Championship instance for "year";
-        # otherwise, create one
-        statement = select(Championship).where(Championship.year == year)
-        championship = session.exec(statement).first()
-        if championship is None:
-            championship = Championship(year=year)
+        championship = select_championship_by_year(year, session)
 
         races = [
             Race(
@@ -93,12 +98,7 @@ def create_championship(
     Create the championship and the linked tables for constructors and their drivers
     """
     with Session(engine) as session:
-        # Check if there is already a Championship instance for "year";
-        # otherwise, create one
-        statement = select(Championship).where(Championship.year == year)
-        championship = session.exec(statement).first()
-        if championship is None:
-            championship = Championship(year=year)
+        championship = select_championship_by_year(year, session)
 
         for constructor_data, driver_data in constructor_driver_pairs:
             constructor = Constructor(
@@ -141,10 +141,8 @@ def create_race_results(
     Create the RaceResult table, linking results to races for a given year
     """
     with Session(engine) as session:
-        statement = select(Championship).where(Championship.year == year)
-        championship = session.exec(statement).first()
-        if championship is None:
-            championship = Championship(year=year)
+        championship = select_championship_by_year(year, session)
+
         race_statement = select(Race).where(
             Race.circuit_id == race_result_data[0].circuit_id
         )
