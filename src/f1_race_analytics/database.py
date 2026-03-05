@@ -44,9 +44,13 @@ def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
     return race
 
 
-def get_result_by_race_id(session: Session, id: str) -> list[RaceResult] | None:
-    statement = select(RaceResult).where(Race.id == id)
-    race_result = session.exec(statement).all()
+def get_result_by_circuit_id(
+    session: Session, circuit_id: str
+) -> list[RaceResult] | None:
+    statement = select(Race).where(Race.circuit_id == circuit_id)
+    race = session.exec(statement).first()
+    saved_result = select(RaceResult).where(RaceResult.race_id == race.id)
+    race_result = session.exec(saved_result).all()
     return race_result
 
 

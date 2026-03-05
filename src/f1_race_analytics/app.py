@@ -10,7 +10,7 @@ from .database import (
     create_races,
     get_all_races,
     get_race_by_circuit_id,
-    get_result_by_race_id,
+    get_result_by_circuit_id,
     get_session,
 )
 from .f1_data import fetch_races
@@ -53,8 +53,8 @@ def get_race(
     return get_race_by_circuit_id(session, circuit_id)
 
 
-@app.get("/results/{race_id}")
+@app.get("/results/{circuit_id}")
 def get_race_result(
-    race_id: int, session: Annotated[Session, Depends(get_session)]
+    circuit_id: str, session: Annotated[Session, Depends(get_session)]
 ) -> list[RaceResult] | None:
-    return get_result_by_race_id(session, race_id)
+    return get_result_by_circuit_id(session, circuit_id)
