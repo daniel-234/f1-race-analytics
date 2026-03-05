@@ -292,7 +292,6 @@ def test_championship_entry_link():
         session.commit()
         session.refresh(championship)
 
-        # Fix - add constructor_id:
         ferrari = Constructor(
             constructor_id="ferrari", name="Ferrari", nationality="Italian"
         )
@@ -304,8 +303,6 @@ def test_championship_entry_link():
         session.refresh(ferrari)
         session.refresh(mercedes)
 
-        # Wrong - missing number:
-        # Fix - add number:
         leclerc = Driver(
             number="16",
             first_name="Charles",

@@ -46,10 +46,15 @@ def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
 
 def create_races(year: int, races_data: list[Event]) -> Championship:
     """
-    Create the chanpionship and races instances for the given year
+    Create the championship and races instances for the given year
     """
     with Session(engine) as session:
-        championship = Championship(year=year)
+        # Check if there is already a Championship instance for "year";
+        # otherwise, create one
+        statement = select(Championship).where(Championship.year == year)
+        championship = session.exec(statement).first()
+        if championship is None:
+            championship = Championship(year=year)
 
         races = [
             Race(
@@ -78,7 +83,13 @@ def create_championship(
     Create the championship and the linked tables for constructors and their drivers
     """
     with Session(engine) as session:
-        championship = Championship(year=year)
+        # Check if there is already a Championship instance for "year";
+        # otherwise, create one
+        statement = select(Championship).where(Championship.year == year)
+        championship = session.exec(statement).first()
+        if championship is None:
+            championship = Championship(year=year)
+
         session.add(championship)
         session.commit()
         session.refresh(championship)
@@ -120,16 +131,11 @@ def create_championship(
     return championship
 
 
-def create_results(year: int, race_result_data: list[ResultData]) -> RaceResult:
+def create_results(year: int, race_result_data: list[ResultData]) -> list[RaceResult]:
     """
     Create the RaceResult table, linking results to races for a given year
     """
     with Session(engine) as session:
-        championship = Championship(year=year)
-        session.add(championship)
-        session.commit()
-        session.refresh(championship)
-
         results = [
             RaceResult(
                 race_id=race_result.circuit_id,

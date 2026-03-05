@@ -24,6 +24,7 @@ class ConstructorData(NamedTuple):
 
 
 class DriverData(NamedTuple):
+    # Identifies the driver in the driver database
     driver_id: str
     number: str
     first_name: str
@@ -34,8 +35,8 @@ class DriverData(NamedTuple):
 class ResultData(NamedTuple):
     circuit_id: str
     driver_id: str
-    position: int
-    points: int
+    position: str
+    points: str
 
 
 def fetch_races(year: int) -> list[Event]:
