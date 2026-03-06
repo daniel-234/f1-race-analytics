@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "aiomqtt>=2.5.1",
     "fastapi[standard]>=0.133.1",
     "httpx>=0.28.1",
     "nicegui>=3.8.0",
+    "python-decouple>=3.8",
     "sqlmodel>=0.0.34",
 ]
 
