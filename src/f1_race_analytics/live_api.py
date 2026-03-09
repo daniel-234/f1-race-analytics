@@ -1,113 +1,132 @@
 import asyncio
-import json
-from contextlib import asynccontextmanager
+from itertools import groupby
 
-import aiomqtt
 import httpx
-from decouple import config
+import uvicorn
+from datastar_py import ServerSentEventGenerator as SSE
+from datastar_py.fastapi import DatastarResponse
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
-TOKEN_URL = "https://api.openf1.org/token"
-mqtt_username = config("OPENF1_USERNAME")
-mqtt_password = config("OPENF1_PASSWORD")
+app = FastAPI(title="F1 Live Dashboard")
 
-location_queue: asyncio.Queue = asyncio.Queue()
-sessions_queue: asyncio.Queue = asyncio.Queue()
-laps_queue: asyncio.Queue = asyncio.Queue()
+OPENF1_API = "https://api.openf1.org/v1"
+
+HTML_PAGE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>F1 Live Dashboard</title>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+        button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
+        .panel { border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <h1>F1 Live Dashboard</h1>
+    <div>
+        <button data-on:click="@get('/replay?session_key=9839')">
+            Replay Abu Dhabi 2025
+        </button>
+        <button data-on:click="@get('/replay?session_key=latest')">
+            Replay Latest Session
+        </button>
+    </div>
+    <div id="session-info" class="panel">
+        <p>Click a button to start</p>
+    </div>
+    <div id="positions" class="panel">
+        <p>Position data will appear here</p>
+    </div>
+    <div id="status" class="panel" style="background: #f0fff0;">
+        <p>Ready</p>
+    </div>
+</body>
+</html>
+"""
 
 
-async def get_access_token() -> tuple[str, int]:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            TOKEN_URL,
-            data={"username": mqtt_username, "password": mqtt_password},
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+def build_positions_html(standings: dict[int, int], drivers: dict[int, str]) -> str:
+    sorted_drivers = sorted(standings.items(), key=lambda x: x[1])
+    rows = "".join(
+        f"<tr><td>P{pos}</td><td>{drivers.get(num, f'#{num}')}</td></tr>"
+        for num, pos in sorted_drivers[:10]
+    )
+    return f'<div id="positions" class="panel"><h2>Positions</h2><table><tr><th>Pos</th><th>Driver</th></tr>{rows}</table></div>'
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return HTML_PAGE
+
+
+@app.get("/replay")
+async def replay_session(session_key: str = "9839", speed: float = 1):
+    """Replay historical position data as live stream."""
+
+    async def stream():
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{OPENF1_API}/sessions?session_key={session_key}")
+            sessions = resp.json() if resp.status_code == 200 else []
+
+            if sessions:
+                s = sessions[0]
+                yield SSE.patch_elements(
+                    f'<div id="session-info" class="panel"><h2>{s.get("session_name")} - {s.get("location")}</h2></div>'
+                )
+
+            # Fetch driver names
+            resp = await client.get(f"{OPENF1_API}/drivers?session_key={session_key}")
+            driver_data = resp.json() if resp.status_code == 200 else []
+            drivers = {
+                d["driver_number"]: d.get("name_acronym", f"#{d['driver_number']}")
+                for d in driver_data
+            }
+
+            resp = await client.get(f"{OPENF1_API}/position?session_key={session_key}")
+            positions = resp.json() if resp.status_code == 200 else []
+
+        if not positions:
+            yield SSE.patch_elements(
+                '<div id="status" class="panel"><p>No data found</p></div>'
+            )
+            return
+
+        sorted_positions = sorted(positions, key=lambda x: x.get("date", ""))
+        grouped = groupby(sorted_positions, key=lambda x: x.get("date", ""))
+
+        standings: dict[int, int] = {}
+        count = 0
+
+        for timestamp, group in grouped:
+            count += 1
+            if count > 50:
+                break
+
+            for p in group:
+                driver, pos = p.get("driver_number"), p.get("position")
+                if driver and pos:
+                    standings[driver] = pos
+
+            yield SSE.patch_elements(build_positions_html(standings, drivers))
+
+            time_short = timestamp[11:19] if len(timestamp) > 19 else timestamp
+            yield SSE.patch_elements(
+                f'<div id="status" class="panel" style="background: #f0fff0;"><p>Update {count} - {time_short}</p></div>'
+            )
+
+            await asyncio.sleep(speed)
+
+        yield SSE.patch_elements(
+            '<div id="status" class="panel" style="background: #f0fff0;"><p>Replay complete</p></div>'
         )
-        response.raise_for_status()
-        token_data = response.json()
-        return token_data["access_token"], int(token_data["expires_in"])
+
+    return DatastarResponse(stream())
 
 
-async def mqtt_listener():
-    while True:
-        try:
-            access_token, expires_in = await get_access_token()
-            print(f"Token obtained, valid for {expires_in} seconds")
-
-            # Reconnect a bit before the token actually expires
-            refresh_at = expires_in - 60
-
-            async with aiomqtt.Client(
-                hostname="mqtt.openf1.org",
-                port=8084,
-                username=mqtt_username,
-                password=access_token,
-                transport="websockets",
-                websocket_path="/mqtt",
-                tls_params=aiomqtt.TLSParameters(),
-            ) as client:
-                async with client.messages() as messages:
-                    await client.subscribe("v1/sessions")
-                    await client.subscribe("v1/location")
-                    await client.subscribe("v1/laps")
-
-                    # Race between incoming messages and token expiry
-                    refresh_task = asyncio.create_task(asyncio.sleep(refresh_at))
-
-                    async for message in messages:
-                        if message.topic.matches("v1/sessions"):
-                            await sessions_queue.put(message.payload.decode())
-                        elif message.topic.matches("v1/location"):
-                            await location_queue.put(message.payload.decode())
-                        elif message.topic.matches("v1/laps"):
-                            await laps_queue.put(message.payload.decode())
-
-                        print(
-                            f"Topic: {message.topic} | Payload: {message.payload.decode()}"
-                        )
-
-                        if refresh_task.done():
-                            print("Token expiring soon, reconnecting...")
-                            break
-
-        except httpx.HTTPError as e:
-            print(f"Failed to obtain token: {e}, retrying in 10 seconds...")
-            await asyncio.sleep(10)
-
-        except aiomqtt.MqttError as e:
-            print(f"MQTT connection error: {e}, retrying in 5 seconds...")
-            await asyncio.sleep(5)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    task = asyncio.create_task(mqtt_listener())
-    yield
-    task.cancel()
-
-
-app = FastAPI(lifespan=lifespan)
-
-
-@app.get("/location")
-async def get_location():
-    messages = []
-    while not location_queue.empty():
-        messages.append(json.loads(location_queue.get_nowait()))
-    return messages
-
-
-@app.get("/laps")
-async def get_laps():
-    messages = []
-    while not laps_queue.empty():
-        messages.append(json.loads(laps_queue.get_nowait()))
-    return messages
-
-
-@app.get("/sessions")
-async def get_sessions():
-    messages = []
-    while not sessions_queue.empty():
-        messages.append(json.loads(sessions_queue.get_nowait()))
-    return messages
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

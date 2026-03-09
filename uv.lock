@@ -264,6 +264,15 @@ wheels = [
 ]
 
 [[package]]
+name = "datastar-py"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e9/e3/28f8b1ba914302378fdec7050a11ca69e937f000ba16b9c9f8aaf8f8667e/datastar_py-0.8.0.tar.gz", hash = "sha256:a6893608da32378ae22640c115c80e50b2e905db1a2adca840d1ee6b1009b308", size = 137445, upload-time = "2025-12-19T19:43:53.802Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/9c/2d805013718a5e90e1574e54b5eef6e64955c7c0f319d1ef9fc4dcdd6a79/datastar_py-0.8.0-py3-none-any.whl", hash = "sha256:637b557d163ad31d1b1c8ecf13c02ae33cd5134ec3f606ed38d0cefcac675d54", size = 19023, upload-time = "2025-12-19T19:43:52.626Z" },
+]
+
+[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -300,6 +309,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiomqtt" },
+    { name = "datastar-py" },
     { name = "fastapi", extra = ["standard"] },
     { name = "httpx" },
     { name = "nicegui" },
@@ -317,6 +327,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiomqtt", specifier = ">=2.5.1" },
+    { name = "datastar-py", specifier = ">=0.8.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.133.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "nicegui", specifier = ">=3.8.0" },
