@@ -48,6 +48,9 @@ def fetch_races(year: int) -> list[Event]:
         print("Sorry, something went wrong")
         return []
     races = races_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    if not races:
+        print(f"No races found for year{year}")
+        return []
     race_info = [
         Event(
             race.get("raceName", ""),
@@ -75,6 +78,9 @@ def fetch_constructors(year: int) -> list[ConstructorData]:
         .get("ConstructorTable", {})
         .get("Constructors", [])
     )
+    if not constructors:
+        print(f"No constructors found for year {year}")
+        return []
     constructor_info = [
         ConstructorData(
             constructor.get("constructorId", ""),
@@ -125,12 +131,11 @@ def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
         print(f"No result for circuit {circuit_id}")
         return []
     # Get the single object returned by the API from the "Races" list
-    results = (
-        race_data.get("MRData", {})
-        .get("RaceTable", {})
-        .get("Races", [])[0]
-        .get("Results", [])
-    )
+    races = race_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    if not races:
+        print(f"No races found for circuit {circuit_id}")
+        return []
+    results = races[0].get("Results", [])
     result_info = [
         ResultData(
             circuit_id,

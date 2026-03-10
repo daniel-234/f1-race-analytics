@@ -35,8 +35,8 @@ app = FastAPI(title="F1 Race Analytics API", lifespan=lifespan)
 
 def populate_db():
     create_db_and_tables()
-    races_data = fetch_races(2026)
-    create_races(2026, races_data)
+    races_data = fetch_races(YEAR)
+    create_races(YEAR, races_data)
 
 
 @app.get("/races")

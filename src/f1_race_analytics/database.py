@@ -56,7 +56,7 @@ def get_result_by_circuit_id(
     return race_result
 
 
-def select_championship_by_year(year: int, session: Session) -> Championship:
+def get_or_create_championship_by_year(year: int, session: Session) -> Championship:
     # Check if there is already a Championship instance for "year";
     # otherwise, create one
     statement = select(Championship).where(Championship.year == year)
@@ -74,7 +74,7 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     Create the championship and races instances for the given year
     """
     with Session(engine) as session:
-        championship = select_championship_by_year(year, session)
+        championship = get_or_create_championship_by_year(year, session)
 
         races = [
             Race(
@@ -103,7 +103,7 @@ def create_championship(
     Create the championship and the linked tables for constructors and their drivers
     """
     with Session(engine) as session:
-        championship = select_championship_by_year(year, session)
+        championship = get_or_create_championship_by_year(year, session)
 
         for constructor_data, driver_data in constructor_driver_pairs:
             # Look up existing constructor, or create new
@@ -160,14 +160,14 @@ def create_race_results(
     Create the RaceResult table, linking results to races for a given year
     """
     with Session(engine) as session:
-        select_championship_by_year(year, session)
+        get_or_create_championship_by_year(year, session)
 
         race_statement = select(Race).where(
             Race.circuit_id == race_result_data[0].circuit_id
         )
         race = session.exec(race_statement).first()
         if race is None:
-            return
+            return []
 
         for race_result in race_result_data:
             # Get the driver by the API's driver_id, that is a string
@@ -178,11 +178,17 @@ def create_race_results(
             if driver is None:
                 continue
             # Use the Driver id primary key (int) as foreign key in the link table
+            try:
+                position = int(race_result.position)
+                points = int(race_result.points)
+            except ValueError:
+                # Skip drivers with non-numeric positions (DSQ, etc.)
+                continue
             result = RaceResult(
                 race_id=race.id,
                 driver_id=driver.id,
-                position=int(race_result.position),
-                points=int(race_result.points),
+                position=position,
+                points=points,
             )
             session.add(result)
 
