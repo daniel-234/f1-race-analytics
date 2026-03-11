@@ -1,56 +1,27 @@
 import asyncio
 from itertools import groupby
+from pathlib import Path
 
 import httpx
 import uvicorn
 from datastar_py import ServerSentEventGenerator as SSE
 from datastar_py.fastapi import DatastarResponse
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI(title="F1 Live Dashboard")
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
 
 OPENF1_API = "https://api.openf1.org/v1"
 
-HTML_PAGE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>F1 Live Dashboard</title>
-    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
-    <style>
-        body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-        button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
-        .panel { border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
-    </style>
-</head>
-<body>
-    <h1>F1 Live Dashboard</h1>
-    <div>
-        <button data-on:click="@get('/replay?session_key=9839')">
-            Replay Abu Dhabi 2025
-        </button>
-        <button data-on:click="@get('/replay?session_key=latest')">
-            Replay Latest Session
-        </button>
-    </div>
-    <div id="session-info" class="panel">
-        <p>Click a button to start</p>
-    </div>
-    <div id="positions" class="panel">
-        <p>Position data will appear here</p>
-    </div>
-    <div id="status" class="panel" style="background: #f0fff0;">
-        <p>Ready</p>
-    </div>
-</body>
-</html>
-"""
 
-
-def build_positions_html(standings: dict[int, int], drivers: dict[int, str]) -> str:
+def render_positions(standings: dict[int, int], drivers: dict[int, str]) -> str:
+    """
+    Render the drivers positions table body as HTML
+    """
     sorted_drivers = sorted(standings.items(), key=lambda x: x[1])
     rows = "".join(
         f"<tr><td>P{pos}</td><td>{drivers.get(num, f'#{num}')}</td></tr>"
@@ -60,8 +31,8 @@ def build_positions_html(standings: dict[int, int], drivers: dict[int, str]) -> 
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    return HTML_PAGE
+async def index(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "index.html")
 
 
 @app.get("/replay")
@@ -112,7 +83,7 @@ async def replay_session(session_key: str = "9839", speed: float = 1):
                 if driver and pos:
                     standings[driver] = pos
 
-            yield SSE.patch_elements(build_positions_html(standings, drivers))
+            yield SSE.patch_elements(render_positions(standings, drivers))
 
             time_short = timestamp[11:19] if len(timestamp) > 19 else timestamp
             yield SSE.patch_elements(
