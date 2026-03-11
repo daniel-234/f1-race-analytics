@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
@@ -14,20 +15,31 @@ app = FastAPI(title="F1 Live Dashboard")
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
-
 OPENF1_API = "https://api.openf1.org/v1"
 
 
-def render_positions(standings: dict[int, int], drivers: dict[int, str]) -> str:
+@dataclass
+class DriverStanding:
+    position: int
+    change: int
+
+
+def render_positions(
+    standings: dict[int, DriverStanding], drivers: dict[int, str]
+) -> str:
     """
     Render the drivers positions table body as HTML
     """
-    sorted_drivers = sorted(standings.items(), key=lambda x: x[1])
-    rows = "".join(
-        f"<tr><td>P{pos}</td><td>{drivers.get(num, f'#{num}')}</td></tr>"
-        for num, pos in sorted_drivers[:10]
-    )
-    return f'<div id="positions" class="panel"><h2>Positions</h2><table><tr><th>Pos</th><th>Driver</th></tr>{rows}</table></div>'
+    rows = []
+    table_rows = []
+    for driver_number, standing in standings.items():
+        rows.append((driver_number, standing.position, standing.change))
+    for row in sorted(rows, key=lambda x: x[1])[:10]:
+        number, position, change = row
+        tr = f"<tr><td>P{position}</td><td>{number}</td><td>{change}</td></tr>"
+        table_rows.append(tr)
+
+    return f'<div id="positions" class="panel"><h2>Positions</h2><table><tr><th>Pos</th><th>Driver</th></tr>{"\n".join(table_rows)}</table></div>'
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -70,7 +82,7 @@ async def replay_session(session_key: str = "9839", speed: float = 1):
         sorted_positions = sorted(positions, key=lambda x: x.get("date", ""))
         grouped = groupby(sorted_positions, key=lambda x: x.get("date", ""))
 
-        standings: dict[int, int] = {}
+        standings: dict[int, DriverStanding] = {}
         count = 0
 
         for timestamp, group in grouped:
@@ -81,7 +93,16 @@ async def replay_session(session_key: str = "9839", speed: float = 1):
             for p in group:
                 driver, pos = p.get("driver_number"), p.get("position")
                 if driver and pos:
-                    standings[driver] = pos
+                    # Store the drivers' previous standings to compare them with
+                    # the new positions and check if there has been a change
+                    previous_position = (
+                        pos if count == 1 else standings[driver].position
+                    )
+                    new_position = pos
+                    change = new_position - previous_position
+                    standings[driver] = DriverStanding(
+                        position=new_position, change=change
+                    )
 
             yield SSE.patch_elements(render_positions(standings, drivers))
 
