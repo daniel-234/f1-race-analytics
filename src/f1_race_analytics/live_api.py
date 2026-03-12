@@ -36,7 +36,7 @@ def render_positions(
         rows.append((driver_number, standing.position, standing.change))
     for row in sorted(rows, key=lambda x: x[1])[:10]:
         number, position, change = row
-        arrow = "▲" if change > 0 else "▼" if change < 0 else ""
+        arrow = "▲" if change < 0 else "▼" if change > 0 else ""
         tr = f"<tr><td>P{position}</td><td>{number}</td><td>{arrow} {abs(change)}</td></tr>"
         table_rows.append(tr)
 
