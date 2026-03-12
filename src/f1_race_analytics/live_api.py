@@ -45,12 +45,25 @@ def render_positions(
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(
+        request=request, name="index.html", context={"title": "F1 Analytics Platform"}
+    )
 
 
 @app.get("/replay")
+async def replay_page(request: Request):
+    """Serve the HTML page for replay."""
+    return templates.TemplateResponse(
+        "live_dashboard.html",
+        {
+            "request": request,
+        },
+    )
+
+
+@app.get("/replay/stream")
 async def replay_session(session_key: str = "9839", speed: float = 1):
-    """Replay historical position data as live stream."""
+    """Stream replay data via SSE."""
 
     async def stream():
         async with httpx.AsyncClient() as client:
