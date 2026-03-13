@@ -123,8 +123,6 @@ async def live_endpoint(request: Request, session_key: str):
             </div>
         """)
 
-        # yield SSE.patch_signals({"session": session})
-
         # --- MQTT setup ---
         queue: asyncio.Queue = asyncio.Queue()
         loop = asyncio.get_event_loop()
@@ -172,6 +170,7 @@ async def live_endpoint(request: Request, session_key: str):
         try:
             while True:
                 try:
+                    # Handle the situatio when there are no MQTT messages for 30 seconds
                     message = await asyncio.wait_for(queue.get(), timeout=30.0)
 
                     if "error" in message:
@@ -183,47 +182,22 @@ async def live_endpoint(request: Request, session_key: str):
                     topic = message["topic"]
                     data = message["data"]
 
-                    yield SSE.patch_signals({topic.replace("/", "_"): data})
-
-                    if topic == "v1/location":
+                    if topic == "v1/laps":
                         driver = data.get("driver_number")
-                        yield SSE.patch_elements(f"""
-                            <div id="f1-location-{driver}">
-                                Driver {driver} → x:{data.get('x')} y:{data.get('y')}
-                            </div>
-                        """)
-
-                    elif topic == "v1/laps":
-                        driver = data.get("driver_number")
-                        print(driver)
-                        yield SSE.patch_elements(f"""
-                            <div id="f1-lap-{driver}">
-                                Driver {driver} — Lap {data.get('lap_number')}
-                            </div>
-                        """)
-
-                    elif topic == "v1/car_data":
-                        driver = data.get("driver_number")
-                        yield SSE.patch_elements(f"""
-                            <div id="f1-car-{driver}">
-                                Driver {driver} — {data.get('rpm')} RPM ·
-                                {data.get('speed')} km/h ·
-                                Gear {data.get('n_gear')}
-                            </div>
-                        """)
-
-                    elif topic == "v1/intervals":
-                        driver = data.get("driver_number")
-                        yield SSE.patch_elements(f"""
-                            <div id="f1-interval-{driver}">
-                                Driver {driver} — gap: {data.get('gap_to_leader')}
-                            </div>
-                        """)
+                        lap_number = data.get("lap_number")
+                        # TODO Keep either patch_signals or patch_elements
+                        yield SSE.patch_signals({"laps": {str(driver): lap_number}})
+                        # yield SSE.patch_elements(f"""
+                        #    <div id="f1-lap-{driver}">
+                        #        Driver {driver} — Lap {data.get('lap_number')}
+                        #    </div>
+                        # """)
 
                     elif topic == "v1/position":
                         driver = data.get("driver_number")
                         position = data.get("position")
-                        yield SSE.patch_signals({f"position_{driver}": position})
+                        # TODO Keep either patch_signals or patch_elements
+                        yield SSE.patch_signals({"positions": {str(driver): position}})
                         yield SSE.patch_elements(f"""
                             <div id="f1-position-{driver}">
                                 Driver {driver} — P{position}
@@ -231,6 +205,8 @@ async def live_endpoint(request: Request, session_key: str):
                         """)
 
                 except asyncio.TimeoutError:
+                    # Keep the SSE connection even when there are no MQTT messages for
+                    # 30 seconds, so the browser keeps the connection active.
                     yield SSE.patch_elements("""<span id="f1-ping" hidden></span>""")
 
         finally:
@@ -308,15 +284,19 @@ async def replay_session(session_key: str = "9839", speed: float = 1):
                         position=new_position, change=change
                     )
 
+            # Send an SSE event that updates the positions table returned by "render_positions"
+            # by using Datastar's patching/morphing mechanism.
             yield SSE.patch_elements(render_positions(standings, drivers))
 
             time_short = timestamp[11:19] if len(timestamp) > 19 else timestamp
+            # Stream is in progress; patch the container DIV for status update.
             yield SSE.patch_elements(
                 f'<div id="status" class="panel" style="background: #f0fff0;"><p>Update {count} - {time_short}</p></div>'
             )
 
             await asyncio.sleep(speed)
 
+        # Stream has completed; patch the container DIV for status complete
         yield SSE.patch_elements(
             '<div id="status" class="panel" style="background: #f0fff0;"><p>Replay complete</p></div>'
         )
