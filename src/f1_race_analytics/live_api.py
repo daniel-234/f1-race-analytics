@@ -19,10 +19,13 @@ app = FastAPI(title="F1 Live Dashboard")
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
-OPENF1_API = "https://api.openf1.org/v1"
-OPENF1_TOKEN_URL = "https://api.openf1.org/token"
-OPENF1_MQTT_BROKER = "mqtt.openf1.org"
-OPENF1_MQTT_PORT = 8883
+OPENF1_API = config("OPENF1_API", default="https://api.openf1.org/v1")
+OPENF1_TOKEN_URL = config("OPENF1_TOKEN_URL", default="https://api.openf1.org/token")
+OPENF1_MQTT_BROKER = config("OPENF1_MQTT_BROKER", default="mqtt.openf1.org")
+OPENF1_MQTT_PORT = config("OPENF1_MQTT_PORT", default=8883, cast=int)
+OPENF1_USE_TLS = config(
+    "OPENF1_USE_TLS", default="true", cast=lambda v: v.lower() == "true"
+)
 
 _cached_token: str | None = None
 
@@ -79,12 +82,13 @@ async def index(request: Request) -> HTMLResponse:
 
 
 @app.get("/live")
-async def live_page(request: Request):
-    """Serve the HTML page for replay."""
+async def live_page(request: Request, session_key: str = "99999"):
+    """Serve the HTML page for live data."""
     return templates.TemplateResponse(
         "live_dashboard.html",
         {
             "request": request,
+            "session_key": session_key,
         },
     )
 
@@ -119,7 +123,7 @@ async def live_endpoint(request: Request, session_key: str):
 
         yield SSE.patch_elements(f"""
             <div id="session-info" class="panel">
-                <h2>{session.get('session_name', '')} — {session.get('circuit_short_name', '')}</h2>
+                <h2>{session.get("session_name", "")} — {session.get("circuit_short_name", "")}</h2>
             </div>
         """)
 
@@ -141,24 +145,33 @@ async def live_endpoint(request: Request, session_key: str):
                 for topic in topics:
                     client.subscribe(topic)
             else:
-                queue.put_nowait({"error": f"MQTT connect failed: rc={rc}"})
+                loop.call_soon_threadsafe(
+                    queue.put_nowait, {"error": f"MQTT connect failed: rc={rc}"}
+                )
 
         def on_message(client, userdata, msg):
             try:
                 data = json.loads(msg.payload.decode())
                 if data.get("session_key") == session_key:
-                    queue.put_nowait({"topic": msg.topic, "data": data})
+                    loop.call_soon_threadsafe(
+                        queue.put_nowait, {"topic": msg.topic, "data": data}
+                    )
             except Exception as e:
-                queue.put_nowait({"error": str(e)})
+                loop.call_soon_threadsafe(queue.put_nowait, {"error": str(e)})
 
         def on_disconnect(client, userdata, disconnect_flags, rc, properties=None):
-            queue.put_nowait({"error": "MQTT disconnected"})
+            loop.call_soon_threadsafe(
+                queue.put_nowait, {"error": f"MQTT disconnected: rc={rc}"}
+            )
 
         mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        mqtt_client.username_pw_set(username=config("OPENF1_USERNAME"), password=token)
-        mqtt_client.tls_set(
-            cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS_CLIENT
-        )
+        if OPENF1_USE_TLS:
+            mqtt_client.username_pw_set(
+                username=config("OPENF1_USERNAME"), password=token
+            )
+            mqtt_client.tls_set(
+                cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS_CLIENT
+            )
         mqtt_client.on_connect = on_connect
         mqtt_client.on_message = on_message
         mqtt_client.on_disconnect = on_disconnect
@@ -176,7 +189,7 @@ async def live_endpoint(request: Request, session_key: str):
 
                     if "error" in message:
                         yield SSE.patch_elements(f"""
-                            <div id="status" class="panel">{message['error']}</div>
+                            <div id="status" class="panel">{message["error"]}</div>
                         """)
                         break
 
@@ -189,7 +202,7 @@ async def live_endpoint(request: Request, session_key: str):
                         driver = data.get("driver_number")
                         yield SSE.patch_elements(f"""
                             <div id="f1-location-{driver}">
-                                Driver {driver} → x:{data.get('x')} y:{data.get('y')}
+                                Driver {driver} → x:{data.get("x")} y:{data.get("y")}
                             </div>
                         """)
 
@@ -198,7 +211,7 @@ async def live_endpoint(request: Request, session_key: str):
                         print(driver)
                         yield SSE.patch_elements(f"""
                             <div id="f1-lap-{driver}">
-                                Driver {driver} — Lap {data.get('lap_number')}
+                                Driver {driver} — Lap {data.get("lap_number")}
                             </div>
                         """)
 
@@ -206,9 +219,9 @@ async def live_endpoint(request: Request, session_key: str):
                         driver = data.get("driver_number")
                         yield SSE.patch_elements(f"""
                             <div id="f1-car-{driver}">
-                                Driver {driver} — {data.get('rpm')} RPM ·
-                                {data.get('speed')} km/h ·
-                                Gear {data.get('n_gear')}
+                                Driver {driver} — {data.get("rpm")} RPM ·
+                                {data.get("speed")} km/h ·
+                                Gear {data.get("n_gear")}
                             </div>
                         """)
 
@@ -216,7 +229,7 @@ async def live_endpoint(request: Request, session_key: str):
                         driver = data.get("driver_number")
                         yield SSE.patch_elements(f"""
                             <div id="f1-interval-{driver}">
-                                Driver {driver} — gap: {data.get('gap_to_leader')}
+                                Driver {driver} — gap: {data.get("gap_to_leader")}
                             </div>
                         """)
 

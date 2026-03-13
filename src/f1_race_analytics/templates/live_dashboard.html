@@ -6,21 +6,25 @@
     <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
     <style>
         body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-        button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
+        button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; font-size: 1rem; }
         .panel { border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
         table { border-collapse: collapse; width: 100%; }
         th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <!-- Trigger the SSE stream on page load -->
-    <div data-on:load="$get('/live/SESSION_KEY_HERE')">
+    <h1>F1 Live Dashboard</h1>
+    <div>
+        <button data-on:click="@get('/live/stream?session_key={{ session_key }}')">
+            Start Live Stream
+        </button>
+    </div>
 
-        <!-- Session info -->
-        <div id="session-info" class="panel"></div>
+    <!-- Session info -->
+    <div id="session-info" class="panel"><p>Click button to start</p></div>
 
-        <!-- Errors -->
-        <div id="status" class="panel"></div>
+    <!-- Errors -->
+    <div id="status" class="panel"></div>
 
         <!-- One block per driver (1–20) -->
         <!-- Datastar will patch these divs as position data arrives -->
@@ -47,8 +51,7 @@
             <div id="f1-position-20"></div>
         </div>
 
-        <!-- Keepalive ping target -->
-        <span id="f1-ping" hidden></span>
-    </div>
+    <!-- Keepalive ping target -->
+    <span id="f1-ping" hidden></span>
 </body>
 </html>
