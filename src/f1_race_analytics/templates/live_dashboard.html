@@ -51,6 +51,17 @@
         <div id="f1-position-20"></div>
     </div>
 
+    <!-- Dynamic driver data with datastar templating -->
+    <div id="f1-laps" data-signals="{drivers: [], laps: {}, positions: {}}">
+        <template data-for="driver in drivers">
+            <div :id="'f1-driver-' + driver.driver_number">
+                <span>Driver <span data-text="driver.driver_number"></span></span>
+                <span>P<span data-text="$positions[String(driver.driver_number)]"></span></span>
+                <span>Lap <span data-text="$laps[String(driver.driver_number)]"></span></span>
+            </div>
+        </template>
+    </div>
+
     <!-- Keepalive ping target -->
     <span id="f1-ping" hidden></span>
 </body>
