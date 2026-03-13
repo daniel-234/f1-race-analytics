@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>F1 Live Dashboard</title>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+        button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
+        .panel { border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <h1>F1 Replay Dashboard</h1>
+    <div>
+        <button data-on:click="@get('/replay/stream?session_key=9839')">
+            Replay Abu Dhabi 2025
+        </button>
+        <button data-on:click="@get('/replay/stream?session_key=latest')">
+            Replay Latest Session
+        </button>
+    </div>
+    <div id="session-info" class="panel">
+        <p>Click a button to start</p>
+    </div>
+    <div id="positions" class="panel">
+        <p>Position data will appear here</p>
+    </div>
+    <div id="status" class="panel" style="background: #f0fff0;">
+        <p>Ready</p>
+    </div>
+</body>
+</html>
