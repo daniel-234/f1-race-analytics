@@ -1,17 +1,389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>{{ title }}</title>
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formula 1 — 2026 Season</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --red: #e10600;
+      --dark: #0f0f0f;
+      --mid: #1a1a1a;
+      --card: #222222;
+      --border: #333;
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── NAVBAR ─────────────────────────────── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 60px;
+      background: #000;
+      border-bottom: 3px solid var(--red);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+
+    .nav-logo span { color: #fff; }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: var(--red); }
+
+    /* ── HERO ───────────────────────────────── */
+    header {
+      padding: 3.5rem 2.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .season-tag {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: .6rem;
+    }
+
+    h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    h1 em {
+      font-style: normal;
+      color: var(--red);
+    }
+
+    .subtitle {
+      margin-top: .8rem;
+      color: var(--muted);
+      font-size: .95rem;
+      letter-spacing: .5px;
+    }
+
+    /* ── RACE GRID ──────────────────────────── */
+    .races-section {
+      padding: 2.5rem 2.5rem 4rem;
+    }
+
+    .section-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .race-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(4, auto);
+      gap: 12px;
+    }
+
+    .race-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1rem .9rem;
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      cursor: pointer;
+      transition: border-color .2s, transform .15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .race-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--border);
+      transition: background .2s;
+    }
+
+    .race-card:hover { border-color: var(--red); transform: translateY(-2px); }
+    .race-card:hover::before { background: var(--red); }
+
+    .race-card.sprint::after {
+      content: 'S';
+      position: absolute;
+      top: 8px; right: 9px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--red);
+      background: rgba(225,6,0,.12);
+      border: 1px solid rgba(225,6,0,.3);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    .round-num {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .race-location {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: .5px;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .race-circuit {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.2;
+    }
+
+    .race-date {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      color: #aaa;
+      letter-spacing: .3px;
+      margin-top: .2rem;
+    }
+  </style>
+</head>
 <body>
-  <h1>{{ title }}</h1>
-    <nav>
-        <a href="/replay">Replay session</a>
-    </nav>
-    <nav>
-        <a href="/live">Live data</a>
-    </nav>
+
+  <!-- NAVBAR -->
+  <nav>
+    <div class="nav-logo">F1<span> ·</span></div>
+    <ul class="nav-links">
+      <li><a href="/replay">Replay session</a></li>
+      <li><a href="/live">Live data</a></li>
+      <!-- <li><a href="">Seasons</a></li>
+      <li><a href="#">Teams</a></li>
+      <li><a href="#">Drivers</a></li> -->
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <header>
+    <p class="season-tag">FIA Formula One World Championship</p>
+    <!-- <h1>{{ title }}</h1> -->
+    <h1>Formula <em>1</em><br>2026 Season</h1>
+    <p class="subtitle">24 rounds &nbsp;·&nbsp; 5 continents &nbsp;·&nbsp; 6 sprint weekends &nbsp;·&nbsp; New era regulations</p>
+  </header>
+
+  <!-- RACE CALENDAR GRID -->
+  <section class="races-section">
+    <p class="section-label">Race Calendar — 24 Rounds</p>
+    <div class="race-grid">
+
+      <!-- Row 1 -->
+      <div class="race-card">
+        <span class="round-num">Round 01</span>
+        <span class="race-location">Australia</span>
+        <span class="race-circuit">Albert Park, Melbourne</span>
+        <span class="race-date">6 – 8 Mar</span>
+      </div>
+      <div class="race-card sprint">
+        <span class="round-num">Round 02</span>
+        <span class="race-location">China</span>
+        <span class="race-circuit">Shanghai Int'l Circuit</span>
+        <span class="race-date">13 – 15 Mar</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 03</span>
+        <span class="race-location">Japan</span>
+        <span class="race-circuit">Suzuka Circuit</span>
+        <span class="race-date">27 – 29 Mar</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 04</span>
+        <span class="race-location">Bahrain</span>
+        <span class="race-circuit">Bahrain Int'l Circuit</span>
+        <span class="race-date">10 – 12 Apr</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 05</span>
+        <span class="race-location">Saudi Arabia</span>
+        <span class="race-circuit">Jeddah Corniche Circuit</span>
+        <span class="race-date">17 – 19 Apr</span>
+      </div>
+      <div class="race-card sprint">
+        <span class="round-num">Round 06</span>
+        <span class="race-location">Miami</span>
+        <span class="race-circuit">Miami Int'l Autodrome</span>
+        <span class="race-date">1 – 3 May</span>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="race-card sprint">
+        <span class="round-num">Round 07</span>
+        <span class="race-location">Canada</span>
+        <span class="race-circuit">Circuit Gilles Villeneuve</span>
+        <span class="race-date">22 – 24 May</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 08</span>
+        <span class="race-location">Monaco</span>
+        <span class="race-circuit">Circuit de Monaco</span>
+        <span class="race-date">5 – 7 Jun</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 09</span>
+        <span class="race-location">Barcelona</span>
+        <span class="race-circuit">Circuit de Catalunya</span>
+        <span class="race-date">12 – 14 Jun</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 10</span>
+        <span class="race-location">Austria</span>
+        <span class="race-circuit">Red Bull Ring, Spielberg</span>
+        <span class="race-date">26 – 28 Jun</span>
+      </div>
+      <div class="race-card sprint">
+        <span class="round-num">Round 11</span>
+        <span class="race-location">Great Britain</span>
+        <span class="race-circuit">Silverstone Circuit</span>
+        <span class="race-date">3 – 5 Jul</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 12</span>
+        <span class="race-location">Belgium</span>
+        <span class="race-circuit">Circuit de Spa-Franc.</span>
+        <span class="race-date">17 – 19 Jul</span>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="race-card">
+        <span class="round-num">Round 13</span>
+        <span class="race-location">Hungary</span>
+        <span class="race-circuit">Hungaroring, Budapest</span>
+        <span class="race-date">24 – 26 Jul</span>
+      </div>
+      <div class="race-card sprint">
+        <span class="round-num">Round 14</span>
+        <span class="race-location">Netherlands</span>
+        <span class="race-circuit">Zandvoort Circuit</span>
+        <span class="race-date">21 – 23 Aug</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 15</span>
+        <span class="race-location">Italy</span>
+        <span class="race-circuit">Autodromo di Monza</span>
+        <span class="race-date">4 – 6 Sep</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 16</span>
+        <span class="race-location">Madrid</span>
+        <span class="race-circuit">Madrid Street Circuit</span>
+        <span class="race-date">11 – 13 Sep</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 17</span>
+        <span class="race-location">Azerbaijan</span>
+        <span class="race-circuit">Baku City Circuit</span>
+        <span class="race-date">25 – 27 Sep</span>
+      </div>
+      <div class="race-card sprint">
+        <span class="round-num">Round 18</span>
+        <span class="race-location">Singapore</span>
+        <span class="race-circuit">Marina Bay Street Circuit</span>
+        <span class="race-date">9 – 11 Oct</span>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="race-card">
+        <span class="round-num">Round 19</span>
+        <span class="race-location">USA</span>
+        <span class="race-circuit">Circuit of the Americas</span>
+        <span class="race-date">23 – 25 Oct</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 20</span>
+        <span class="race-location">Mexico City</span>
+        <span class="race-circuit">Autódromo Hermanos Rodríguez</span>
+        <span class="race-date">30 Oct – 1 Nov</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 21</span>
+        <span class="race-location">São Paulo</span>
+        <span class="race-circuit">Autódromo José Carlos Pace</span>
+        <span class="race-date">6 – 8 Nov</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 22</span>
+        <span class="race-location">Las Vegas</span>
+        <span class="race-circuit">Las Vegas Strip Circuit</span>
+        <span class="race-date">20 – 22 Nov</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 23</span>
+        <span class="race-location">Qatar</span>
+        <span class="race-circuit">Lusail Int'l Circuit</span>
+        <span class="race-date">27 – 29 Nov</span>
+      </div>
+      <div class="race-card">
+        <span class="round-num">Round 24</span>
+        <span class="race-location">Abu Dhabi</span>
+        <span class="race-circuit">Yas Marina Circuit</span>
+        <span class="race-date">4 – 6 Dec</span>
+      </div>
+
+    </div>
+  </section>
+
 </body>
 </html>
