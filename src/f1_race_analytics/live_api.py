@@ -160,6 +160,7 @@ async def live_endpoint(request: Request, session_key: str):
             return
 
         session = sessions[0]
+        actual_session_key = session["session_key"]
 
         yield SSE.patch_elements(f"""
             <div id="session-info" class="panel">
@@ -190,7 +191,7 @@ async def live_endpoint(request: Request, session_key: str):
         def on_message(client, userdata, msg):
             try:
                 data = json.loads(msg.payload.decode())
-                if str(data.get("session_key")) == session_key:
+                if data.get("session_key") == actual_session_key:
                     loop.call_soon_threadsafe(
                         queue.put_nowait, {"topic": msg.topic, "data": data}
                     )
@@ -276,6 +277,9 @@ async def live_endpoint(request: Request, session_key: str):
                                 {rows}
                             </tbody>
                         """)
+
+                    else:
+                        print(f"Unhandled topic: {topic}")
 
                 except asyncio.TimeoutError:
                     # Keep the SSE connection even when there are no MQTT messages for
