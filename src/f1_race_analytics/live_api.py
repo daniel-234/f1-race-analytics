@@ -96,6 +96,13 @@ async def live_page(request: Request, session_key: str = "99999"):
 @app.get("/live/stream")
 async def live_endpoint(request: Request, session_key: str):
     async def stream():
+        # Populate the list from the /drivers endpoint
+        drivers = []
+        # Update on each v1/position message
+        positions = {}
+        # Update on each v1/lap message
+        laps = {}
+
         # --- Auth ---
         try:
             token = await get_access_token()
@@ -112,6 +119,34 @@ async def live_endpoint(request: Request, session_key: str):
                 headers={"Authorization": f"Bearer {token}"},
             )
             sessions = resp.json() if resp.status_code == 200 else []
+
+        # Fetch the actual drivers list
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{OPENF1_API}/drivers?session_key={session_key}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            drivers = resp.json() if resp.status_code == 200 else []
+
+        # Fetch initial positions separately
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{OPENF1_API}/position?session_key={session_key}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            position_data = resp.json() if resp.status_code == 200 else []
+
+        # Build positions dict from the latest entry per driver
+        for entry in position_data:
+            driver_num = str(entry["driver_number"])
+            positions[driver_num] = entry["position"]
+
+        yield SSE.patch_signals(
+            {"drivers": drivers, "positions": positions, "laps": {}}
+        )
+
+        # Right after the initial patch_signals
+        print(f"Initial signals sent - drivers: {len(drivers)}, positions: {positions}")
 
         if not sessions:
             yield SSE.patch_elements(
@@ -183,7 +218,7 @@ async def live_endpoint(request: Request, session_key: str):
         try:
             while True:
                 try:
-                    # Handle the situatio when there are no MQTT messages for 30 seconds
+                    # Handle the situation when there are no MQTT messages for 30 seconds
                     message = await asyncio.wait_for(queue.get(), timeout=30.0)
 
                     if "error" in message:
@@ -207,14 +242,33 @@ async def live_endpoint(request: Request, session_key: str):
                         # """)
 
                     elif topic == "v1/position":
-                        driver = data.get("driver_number")
+                        driver_num = str(data.get("driver_number"))
                         position = data.get("position")
-                        # TODO Keep either patch_signals or patch_elements
-                        yield SSE.patch_signals({"positions": {str(driver): position}})
+
+                        if driver_num and position:
+                            positions[driver_num] = position
+
+                        sorted_drivers = sorted(
+                            drivers,
+                            key=lambda d: positions.get(str(d["driver_number"]), 99),
+                        )
+
+                        # Build the full table body as HTML and patch it in one go
+                        rows = ""
+                        for d in sorted_drivers:
+                            num = str(d["driver_number"])
+                            rows += f"""
+                                <tr id="f1-driver-{num}">
+                                    <td>{positions.get(num, '-')}</td>
+                                    <td>{d.get('name_acronym', '')}</td>
+                                    <td>{laps.get(num, '-')}</td>
+                                </tr>
+                            """
+
                         yield SSE.patch_elements(f"""
-                            <div id="f1-position-{driver}">
-                                Driver {driver} — P{position}
-                            </div>
+                            <tbody id="f1-tbody">
+                                {rows}
+                            </tbody>
                         """)
 
                 except asyncio.TimeoutError:
