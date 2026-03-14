@@ -26,6 +26,7 @@ OPENF1_MQTT_PORT = config("OPENF1_MQTT_PORT", default=8883, cast=int)
 OPENF1_USE_TLS = config(
     "OPENF1_USE_TLS", default="true", cast=lambda v: v.lower() == "true"
 )
+print("OPENF1_USE_TLS", OPENF1_USE_TLS)
 
 _cached_token: str | None = None
 
@@ -82,7 +83,7 @@ async def index(request: Request) -> HTMLResponse:
 
 
 @app.get("/live")
-async def live_page(request: Request, session_key: str = "99999"):
+async def live_page(request: Request, session_key: str = "latest"):
     """Serve the HTML page for live data."""
     return templates.TemplateResponse(
         "live_dashboard.html",
@@ -118,6 +119,8 @@ async def live_endpoint(request: Request, session_key: str):
                 f"{OPENF1_API}/sessions?session_key={session_key}",
                 headers={"Authorization": f"Bearer {token}"},
             )
+            print(resp)
+            print(resp.json())
             sessions = resp.json() if resp.status_code == 200 else []
 
         # Fetch the actual drivers list
@@ -147,6 +150,8 @@ async def live_endpoint(request: Request, session_key: str):
 
         # Right after the initial patch_signals
         print(f"Initial signals sent - drivers: {len(drivers)}, positions: {positions}")
+        print(f"Initial laps: {laps}")
+        print(f"Initial session metadata: {sessions}")
 
         if not sessions:
             yield SSE.patch_elements(
@@ -185,7 +190,7 @@ async def live_endpoint(request: Request, session_key: str):
         def on_message(client, userdata, msg):
             try:
                 data = json.loads(msg.payload.decode())
-                if data.get("session_key") == session_key:
+                if str(data.get("session_key")) == session_key:
                     loop.call_soon_threadsafe(
                         queue.put_nowait, {"topic": msg.topic, "data": data}
                     )
@@ -228,6 +233,7 @@ async def live_endpoint(request: Request, session_key: str):
                         break
 
                     topic = message["topic"]
+                    print("message", topic, message["data"])
                     data = message["data"]
 
                     if topic == "v1/laps":
@@ -259,9 +265,9 @@ async def live_endpoint(request: Request, session_key: str):
                             num = str(d["driver_number"])
                             rows += f"""
                                 <tr id="f1-driver-{num}">
-                                    <td>{positions.get(num, '-')}</td>
-                                    <td>{d.get('name_acronym', '')}</td>
-                                    <td>{laps.get(num, '-')}</td>
+                                    <td>{positions.get(num, "-")}</td>
+                                    <td>{d.get("name_acronym", "")}</td>
+                                    <td>{laps.get(num, "-")}</td>
                                 </tr>
                             """
 
@@ -276,6 +282,15 @@ async def live_endpoint(request: Request, session_key: str):
                     # 30 seconds, so the browser keeps the connection active.
                     yield SSE.patch_elements("""<span id="f1-ping" hidden></span>""")
 
+                except Exception as e:
+                    yield SSE.patch_elements(f"""
+                        <div id="status" class="panel">Error processing message: {e}</div>
+                    """)
+
+        except Exception as e:
+            yield SSE.patch_elements(f"""
+                <div id="status" class="panel">Error: {e}</div>
+            """)
         finally:
             mqtt_client.loop_stop()
             mqtt_client.disconnect()
