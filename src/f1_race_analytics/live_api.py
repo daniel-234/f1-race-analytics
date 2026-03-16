@@ -71,10 +71,187 @@ def render_positions(
     return f'<div id="positions" class="panel"><h2>Positions</h2><table><tr><th>Pos</th><th>Driver</th></tr>{"\n".join(table_rows)}</table></div>'
 
 
+RACES = [
+    {
+        "round": "01",
+        "location": "Australia",
+        "circuit": "Albert Park, Melbourne",
+        "date": "6 – 8 Mar",
+        "sprint": False,
+    },
+    {
+        "round": "02",
+        "location": "China",
+        "circuit": "Shanghai Int'l Circuit",
+        "date": "13 – 15 Mar",
+        "sprint": True,
+    },
+    {
+        "round": "03",
+        "location": "Japan",
+        "circuit": "Suzuka Circuit",
+        "date": "27 – 29 Mar",
+        "sprint": False,
+    },
+    {
+        "round": "04",
+        "location": "Bahrain",
+        "circuit": "Bahrain Int'l Circuit",
+        "date": "10 – 12 Apr",
+        "sprint": False,
+    },
+    {
+        "round": "05",
+        "location": "Saudi Arabia",
+        "circuit": "Jeddah Corniche Circuit",
+        "date": "17 – 19 Apr",
+        "sprint": False,
+    },
+    {
+        "round": "06",
+        "location": "Miami",
+        "circuit": "Miami Int'l Autodrome",
+        "date": "1 – 3 May",
+        "sprint": True,
+    },
+    {
+        "round": "07",
+        "location": "Canada",
+        "circuit": "Circuit Gilles Villeneuve",
+        "date": "22 – 24 May",
+        "sprint": True,
+    },
+    {
+        "round": "08",
+        "location": "Monaco",
+        "circuit": "Circuit de Monaco",
+        "date": "5 – 7 Jun",
+        "sprint": False,
+    },
+    {
+        "round": "09",
+        "location": "Barcelona",
+        "circuit": "Circuit de Catalunya",
+        "date": "12 – 14 Jun",
+        "sprint": False,
+    },
+    {
+        "round": "10",
+        "location": "Austria",
+        "circuit": "Red Bull Ring, Spielberg",
+        "date": "26 – 28 Jun",
+        "sprint": False,
+    },
+    {
+        "round": "11",
+        "location": "Great Britain",
+        "circuit": "Silverstone Circuit",
+        "date": "3 – 5 Jul",
+        "sprint": True,
+    },
+    {
+        "round": "12",
+        "location": "Belgium",
+        "circuit": "Circuit de Spa-Franc.",
+        "date": "17 – 19 Jul",
+        "sprint": False,
+    },
+    {
+        "round": "13",
+        "location": "Hungary",
+        "circuit": "Hungaroring, Budapest",
+        "date": "24 – 26 Jul",
+        "sprint": False,
+    },
+    {
+        "round": "14",
+        "location": "Netherlands",
+        "circuit": "Zandvoort Circuit",
+        "date": "21 – 23 Aug",
+        "sprint": True,
+    },
+    {
+        "round": "15",
+        "location": "Italy",
+        "circuit": "Autodromo di Monza",
+        "date": "4 – 6 Sep",
+        "sprint": False,
+    },
+    {
+        "round": "16",
+        "location": "Madrid",
+        "circuit": "Madrid Street Circuit",
+        "date": "11 – 13 Sep",
+        "sprint": False,
+    },
+    {
+        "round": "17",
+        "location": "Azerbaijan",
+        "circuit": "Baku City Circuit",
+        "date": "25 – 27 Sep",
+        "sprint": False,
+    },
+    {
+        "round": "18",
+        "location": "Singapore",
+        "circuit": "Marina Bay Street Circuit",
+        "date": "9 – 11 Oct",
+        "sprint": True,
+    },
+    {
+        "round": "19",
+        "location": "USA",
+        "circuit": "Circuit of the Americas",
+        "date": "23 – 25 Oct",
+        "sprint": False,
+    },
+    {
+        "round": "20",
+        "location": "Mexico City",
+        "circuit": "Autódromo Hermanos Rodríguez",
+        "date": "30 Oct – 1 Nov",
+        "sprint": False,
+    },
+    {
+        "round": "21",
+        "location": "São Paulo",
+        "circuit": "Autódromo José Carlos Pace",
+        "date": "6 – 8 Nov",
+        "sprint": False,
+    },
+    {
+        "round": "22",
+        "location": "Las Vegas",
+        "circuit": "Las Vegas Strip Circuit",
+        "date": "20 – 22 Nov",
+        "sprint": False,
+    },
+    {
+        "round": "23",
+        "location": "Qatar",
+        "circuit": "Lusail Int'l Circuit",
+        "date": "27 – 29 Nov",
+        "sprint": False,
+    },
+    {
+        "round": "24",
+        "location": "Abu Dhabi",
+        "circuit": "Yas Marina Circuit",
+        "date": "4 – 6 Dec",
+        "sprint": False,
+    },
+]
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"title": "F1 Analytics Platform"}
+        request=request,
+        name="index.html",
+        context={
+            "title": "2026 Season",
+            "races": RACES,
+        },
     )
 
 
