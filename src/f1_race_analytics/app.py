@@ -1,11 +1,15 @@
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
 from .database import (
+    clear_db_and_tables,
     create_db_and_tables,
     create_races,
     get_all_races,
@@ -16,7 +20,7 @@ from .database import (
 from .f1_data import fetch_races
 from .models import Race, RaceResult
 
-YEAR = 2025
+YEAR = 2026
 
 
 @asynccontextmanager
@@ -24,6 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """ "
     Create tables; fetch and create races
     """
+    clear_db_and_tables()
     create_db_and_tables()
     races_data = fetch_races(YEAR)
     create_races(YEAR, races_data)
@@ -31,6 +36,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="F1 Race Analytics API", lifespan=lifespan)
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
 def populate_db():
@@ -39,9 +46,19 @@ def populate_db():
     create_races(YEAR, races_data)
 
 
-@app.get("/races")
-def list_races(session: Annotated[Session, Depends(get_session)]) -> Sequence[Race]:
-    return get_all_races(session)
+@app.get("/", response_class=HTMLResponse)
+async def index(
+    request: Request, session: Annotated[Session, Depends(get_session)]
+) -> HTMLResponse:
+    races = get_all_races(session)
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "title": "2026 Season",
+            "races": races,
+        },
+    )
 
 
 @app.get("/races/{circuit_id}")
