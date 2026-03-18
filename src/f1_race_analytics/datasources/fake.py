@@ -24,7 +24,7 @@ class RaceSimulator:
         self.driver_info = {d["driver_name"]: d for d in drivers}
 
     def get_positions(self) -> list[Position]:
-        self.tick()
+        self._tick()
         return [
             Position(
                 driver_name=name,
@@ -35,10 +35,13 @@ class RaceSimulator:
             for idx, name in enumerate(self.positions)
         ]
 
+    def is_finished(self) -> bool:
+        return self.current_lap >= self.total_laps
+
     def get_drivers(self) -> list[dict]:
         return self.drivers
 
-    def tick(self):
+    def _tick(self):
         now = datetime.now(timezone.utc)
         elapsed = (now - self.last_update).total_seconds()
         # Change it to 15 to resemble the API update time
@@ -74,6 +77,9 @@ class FakeDataSource(RaceDataSource):
         with open(data_file) as f:
             data = json.load(f)
         return data["drivers"]
+
+    def is_finished(self) -> bool:
+        return self.simulator.is_finished()
 
     async def get_positions(self, fixture_id: str) -> list[Position]:
         await asyncio.sleep(self.delay_ms / 1000)

@@ -20,3 +20,8 @@ class RaceDataSource(ABC):
     async def get_drivers(self, fixture_id: str) -> list[dict]:
         """Fetch drivers and additional info for a session."""
         ...
+
+    @abstractmethod
+    def is_finished(self) -> bool:
+        """Return True when the session is over."""
+        ...

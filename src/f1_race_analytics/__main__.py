@@ -1,3 +1,5 @@
+import uvicorn
+
 from .app import YEAR
 from .database import (
     clear_db_and_tables,
@@ -20,6 +22,18 @@ def main():
     create_championship(YEAR, constructor_driver_pairs)
     result_data = fetch_results_by_race(YEAR, CIRCUIT_ID)
     create_race_results(YEAR, result_data)
+
+
+def dev():
+    uvicorn.run("f1_race_analytics.app:app", reload=True)
+
+
+def live():
+    uvicorn.run(
+        "f1_race_analytics.live_api:app",
+        reload=True,
+        port=8001,
+    )
 
 
 if __name__ == "__main__":

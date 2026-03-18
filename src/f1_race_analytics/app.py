@@ -54,10 +54,7 @@ async def index(
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={
-            "title": "2026 Season",
-            "races": races,
-        },
+        context={"title": "2026 Season", "races": races, "replay_url": "/replay"},
     )
 
 
@@ -73,3 +70,14 @@ def get_race_result(
     circuit_id: str, session: Annotated[Session, Depends(get_session)]
 ) -> Sequence[RaceResult] | None:
     return get_result_by_circuit_id(session, circuit_id)
+
+
+@app.get("/replay")
+async def replay_page(request: Request):
+    return templates.TemplateResponse(
+        "replay_dashboard.html",
+        {
+            "request": request,
+            "replay_url": "http://localhost:8001",
+        },
+    )
