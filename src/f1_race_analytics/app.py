@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
@@ -11,28 +11,39 @@ from sqlmodel import Session
 
 from .database import (
     clear_db_and_tables,
+    create_championship,
     create_db_and_tables,
+    create_race_results,
     create_races,
     get_all_races,
     get_race_by_circuit_id,
     get_result_by_circuit_id,
     get_session,
 )
-from .f1_data import fetch_races
-from .models import Race, RaceResult
+from .f1_data import (
+    EventStatus,
+    fetch_constructor_driver_pairs,
+    fetch_races,
+    fetch_results_by_race,
+)
+from .models import Race
 
 YEAR = 2026
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """ "
-    Create tables; fetch and create races
-    """
     clear_db_and_tables()
     create_db_and_tables()
     races_data = fetch_races(YEAR)
     create_races(YEAR, races_data)
+    constructor_driver_pairs = fetch_constructor_driver_pairs(YEAR)
+    create_championship(YEAR, constructor_driver_pairs)
+    for race in races_data:
+        if race.status() == EventStatus.PAST:
+            result_data = fetch_results_by_race(YEAR, race.circuit_id)
+            if result_data:
+                create_race_results(YEAR, result_data)
     yield
 
 
@@ -67,11 +78,16 @@ def get_race(
     return get_race_by_circuit_id(session, circuit_id)
 
 
-@app.get("/results/{circuit_id}")
-def get_race_result(
-    circuit_id: str, session: Annotated[Session, Depends(get_session)]
-) -> Sequence[RaceResult] | None:
-    return get_result_by_circuit_id(session, circuit_id)
+@app.get("/results/{circuit_id}", response_class=HTMLResponse)
+async def get_race_result(
+    circuit_id: str, request: Request, session: Annotated[Session, Depends(get_session)]
+) -> HTMLResponse:
+    results = get_result_by_circuit_id(session, circuit_id)
+    return templates.TemplateResponse(
+        request=request,
+        name="results.html",
+        context={"results": results, "circuit_id": circuit_id},
+    )
 
 
 @app.get("/replay")

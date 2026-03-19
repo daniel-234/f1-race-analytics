@@ -1,9 +1,26 @@
 from datetime import date, datetime
+from enum import Enum
 from typing import NamedTuple
 
 import httpx
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
+
+
+class EventStatus(Enum):
+    FUTURE = "future"
+    LIVE = "live"
+    PAST = "past"
+
+
+def compute_status(start_date: date, end_date: date) -> EventStatus:
+    today = date.today()
+    if today < start_date:
+        return EventStatus.FUTURE
+    elif start_date <= today <= end_date:
+        return EventStatus.LIVE
+    else:
+        return EventStatus.PAST
 
 
 class Event(NamedTuple):
@@ -15,6 +32,9 @@ class Event(NamedTuple):
     circuit_locality: str
     circuit_country: str
     has_sprint: bool
+
+    def status(self) -> EventStatus:
+        return compute_status(self.fp1_date, self.date)
 
 
 class ConstructorData(NamedTuple):

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from .f1_data import ConstructorData, DriverData, Event, ResultData
@@ -51,7 +52,12 @@ def get_result_by_circuit_id(
     race = session.exec(statement).first()
     if race is None:
         return
-    saved_result = select(RaceResult).where(RaceResult.race_id == race.id)
+    saved_result = (
+        select(RaceResult)
+        .where(RaceResult.race_id == race.id)
+        .order_by(RaceResult.position)
+        .options(selectinload(RaceResult.driver))
+    )
     race_result = session.exec(saved_result).all()
     return race_result
 

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Race Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo">F1<span> ·</span></div>
+    <ul class="nav-links">
+      <li><a href="/">Calendar</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <p class="season-tag">Race Results</p>
+    <h1>{{ circuit_id }}</h1>
+  </header>
+
+  <section class="races-section">
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Pos</th>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Driver</th>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for result in results %}
+        <tr {% if result.position == 1 %}style="color: gold;"
+            {% elif result.position == 2 %}style="color: silver;"
+            {% elif result.position == 3 %}style="color: #cd7f32;"{% endif %}>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ result.position }}</td>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ result.driver.first_name }} {{ result.driver.last_name }}</td>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ result.points }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>

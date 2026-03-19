@@ -33,7 +33,7 @@
     <div id="race-grid" class="race-grid">
       {% for race in races %}
       {% set status = race.status().value %}
-      <div class="race-card{% if race.has_sprint %} sprint{% endif %} {{ status }}" {% if status == 'past' %}role="button"{% endif %}>
+      <div class="race-card{% if race.has_sprint %} sprint{% endif %} {{ status }}" {% if status == 'past' %}role="button" onclick="window.location='/results/{{ race.circuit_id }}'"{% endif %}>
         <span class="round-num">Round {{ race.id }}</span>
         <span class="race-location">{{ race.circuit_country }}</span>
         <span class="race-circuit">{{ race.circuit_locality }}</span>
