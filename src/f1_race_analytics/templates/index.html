@@ -129,7 +129,6 @@
       display: flex;
       flex-direction: column;
       gap: .35rem;
-      cursor: pointer;
       transition: border-color .2s, transform .15s;
       position: relative;
       overflow: hidden;
@@ -144,8 +143,8 @@
       transition: background .2s;
     }
 
-    .race-card:hover { border-color: var(--red); transform: translateY(-2px); }
-    .race-card:hover::before { background: var(--red); }
+    .race-card:hover { border-color: var(--text); transform: translateY(-2px); }
+    .race-card:hover::before { background: var(--text); }
 
     .race-card.sprint::after {
       content: 'S';
@@ -160,6 +159,19 @@
       border: 1px solid rgba(225,6,0,.3);
       border-radius: 3px;
       padding: 1px 5px;
+    }
+
+    .race-card.live {
+        border: 2px solid red;
+    }
+
+    .race-card.past {
+        cursor: pointer;
+    }
+
+    .race-card.future {
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
     .round-num {
@@ -215,7 +227,8 @@
     -->
     <div id="race-grid" class="race-grid">
       {% for race in races %}
-      <div class="race-card{% if race.has_sprint %} sprint{% endif %}">
+      {% set status = race.status().value %}
+      <div class="race-card{% if race.has_sprint %} sprint{% endif %} {{ status }}" {% if status == 'past' %}role="button"{% endif %}>
         <span class="round-num">Round {{ race.id }}</span>
         <span class="race-location">{{ race.circuit_country }}</span>
         <span class="race-circuit">{{ race.circuit_locality }}</span>

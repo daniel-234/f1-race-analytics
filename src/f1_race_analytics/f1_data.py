@@ -4,7 +4,6 @@ from typing import NamedTuple
 import httpx
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
-# RACES = "races"
 
 
 class Event(NamedTuple):

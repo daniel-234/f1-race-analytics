@@ -1,6 +1,23 @@
 from datetime import date
+from enum import Enum
 
 from sqlmodel import Field, Relationship, SQLModel
+
+
+class EventStatus(Enum):
+    FUTURE = "future"
+    LIVE = "live"
+    PAST = "past"
+
+
+def compute_status(start_date: date, end_date: date) -> EventStatus:
+    today = date.today()
+    if today < start_date:
+        return EventStatus.FUTURE
+    elif start_date <= today <= end_date:
+        return EventStatus.LIVE
+    else:
+        return EventStatus.PAST
 
 
 class Championship(SQLModel, table=True):
@@ -24,6 +41,9 @@ class Race(SQLModel, table=True):
     circuit_locality: str
     circuit_country: str
     has_sprint: bool
+
+    def status(self) -> EventStatus:
+        return compute_status(self.fp1_date, self.date)
 
     # M-to-1 link to Championsip
     championship_id: int | None = Field(default=None, foreign_key="championship.id")
