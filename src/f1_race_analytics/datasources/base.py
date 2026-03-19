@@ -8,6 +8,7 @@ class Position:
     driver_number: int
     position: int
     change: int = 0
+    cumulative_change: int = 0
 
 
 class RaceDataSource(ABC):

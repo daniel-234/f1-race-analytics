@@ -31,15 +31,27 @@ def get_race_data_source() -> RaceDataSource:
 
 def render_positions(positions) -> str:
     rows = "".join(
-        f"<tr><td>P{p.position}</td><td>{p.driver_name}</td><td>#{p.driver_number}</td></tr>"
+        f"<tr style='{'background: rgba(0,255,0,0.08);' if p.change > 0 else 'background: rgba(255,0,0,0.08);' if p.change < 0 else ''}'>"
+        f"<td style='padding: .5rem 1rem; border-bottom: 1px solid var(--border);'>{p.position}</td>"
+        f"<td style='padding: .5rem 1rem; border-bottom: 1px solid var(--border);'>{p.driver_name}</td>"
+        f"<td style='padding: .5rem 1rem; border-bottom: 1px solid var(--border);'>#{p.driver_number}</td>"
+        f"<td style='padding: .5rem 1rem; border-bottom: 1px solid var(--border); color: {'green' if p.cumulative_change > 0 else 'red' if p.cumulative_change < 0 else 'var(--muted)'};'>"
+        f"{'&#9650; +' + str(p.cumulative_change) if p.cumulative_change > 0 else '&#9660; ' + str(p.cumulative_change) if p.cumulative_change < 0 else '&mdash;'}"
+        f"</td>"
+        f"</tr>"
         for p in positions
     )
+    header_style = "text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);"
     return (
-        f'<div id="positions" class="panel">'
-        f"<h2>Positions</h2>"
-        f"<table>"
-        f"<tr><th>Pos</th><th>Driver</th><th>No.</th></tr>"
-        f"{rows}"
+        f'<div id="positions">'
+        f"<table style='width:100%; border-collapse: collapse;'>"
+        f"<thead><tr>"
+        f"<th style='{header_style}'>Pos</th>"
+        f"<th style='{header_style}'>Driver</th>"
+        f"<th style='{header_style}'>No.</th>"
+        f"<th style='{header_style}'>+/-</th>"
+        f"</tr></thead>"
+        f"<tbody>{rows}</tbody>"
         f"</table>"
         f"</div>"
     )

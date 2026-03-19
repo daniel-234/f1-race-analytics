@@ -20,20 +20,23 @@ class RaceSimulator:
         self.last_update = datetime.now(timezone.utc)
         self.positions = [d["driver_name"] for d in drivers]
         self.previous_positions = list(self.positions)
+        self.cumulative_changes = {d["driver_name"]: 0 for d in drivers}
         # Build a lookup map for quick access
         self.driver_info = {d["driver_name"]: d for d in drivers}
 
     def get_positions(self) -> list[Position]:
         self._tick()
-        return [
+        positions = [
             Position(
                 driver_name=name,
                 driver_number=self.driver_info[name]["driver_number"],
                 position=idx + 1,
                 change=(self.previous_positions.index(name) + 1) - (idx + 1),
+                cumulative_change=self.cumulative_changes[name],
             )
             for idx, name in enumerate(self.positions)
         ]
+        return positions
 
     def is_finished(self) -> bool:
         return self.current_lap >= self.total_laps
@@ -59,6 +62,10 @@ class RaceSimulator:
                 self.positions[idx + 1],
                 self.positions[idx],
             )
+        # Update cumulative changes after swaps are done
+        for idx, name in enumerate(self.positions):
+            prev = self.previous_positions.index(name)
+            self.cumulative_changes[name] += prev - idx
 
     def _advance_lap(self):
         if self.current_lap < self.total_laps:

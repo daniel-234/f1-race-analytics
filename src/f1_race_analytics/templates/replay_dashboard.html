@@ -1,15 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>F1 Live Dashboard</title>
-    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1 Live Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
 </head>
 <body>
-    <h1>F1 Dashboard</h1>
-    <div data-init="@get('{{ replay_url }}/live/stream?fixture_id=19614611')">
-    </div>
+
+  <nav>
+    <div class="nav-logo">F1<span> ·</span></div>
+    <ul class="nav-links">
+      <li><a href="/">Calendar</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <p class="season-tag">Live Replay</p>
+    <h1>F1 <em>Dashboard</em></h1>
+  </header>
+
+  <section class="races-section">
+    <div data-init="@get('{{ replay_url }}/live/stream?fixture_id=19614611')"></div>
     <div id="positions">
-        <p>Waiting for data...</p>
+      <p class="section-label">Waiting for data...</p>
     </div>
+  </section>
+
 </body>
 </html>
