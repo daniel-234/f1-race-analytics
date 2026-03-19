@@ -19,9 +19,11 @@ class Race(SQLModel, table=True):
     name: str
     circuit_id: str
     date: date
+    fp1_date: date
     circuit_name: str
     circuit_locality: str
     circuit_country: str
+    has_sprint: bool
 
     # M-to-1 link to Championsip
     championship_id: int | None = Field(default=None, foreign_key="championship.id")

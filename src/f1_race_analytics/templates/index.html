@@ -215,11 +215,11 @@
     -->
     <div id="race-grid" class="race-grid">
       {% for race in races %}
-      <div class="race-card{% if race.sprint %} sprint{% endif %}">
+      <div class="race-card{% if race.has_sprint %} sprint{% endif %}">
         <span class="round-num">Round {{ race.id }}</span>
         <span class="race-location">{{ race.circuit_country }}</span>
         <span class="race-circuit">{{ race.circuit_locality }}</span>
-        <span class="race-date">{{ race.date }}</span>
+        <span class="race-date">{{ race.fp1_date }} &rarr; {{ race.date }}</span>
       </div>
       {% endfor %}
     </div>

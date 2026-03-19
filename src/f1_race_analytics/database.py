@@ -81,10 +81,12 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
                 name=race.name,
                 circuit_id=race.circuit_id,
                 date=race.date,
+                fp1_date=race.fp1_date,
                 circuit_name=race.circuit_name,
                 circuit_locality=race.circuit_locality,
                 circuit_country=race.circuit_country,
                 championship=championship,
+                has_sprint=race.has_sprint,
             )
             for race in races_data
         ]

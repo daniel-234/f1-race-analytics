@@ -11,9 +11,11 @@ class Event(NamedTuple):
     name: str
     circuit_id: str
     date: date
+    fp1_date: date
     circuit_name: str
     circuit_locality: str
     circuit_country: str
+    has_sprint: bool
 
 
 class ConstructorData(NamedTuple):
@@ -56,9 +58,11 @@ def fetch_races(year: int) -> list[Event]:
             race.get("raceName", ""),
             race.get("Circuit", {}).get("circuitId", ""),
             _convert_to_dt(race.get("date", "")),
+            _convert_to_dt(race["FirstPractice"]["date"]),
             race.get("Circuit", {}).get("circuitName", ""),
             race.get("Circuit", {}).get("Location", {}).get("locality", ""),
             race.get("Circuit", {}).get("Location", {}).get("country", ""),
+            "Sprint" in race,
         )
         for race in races
     ]
