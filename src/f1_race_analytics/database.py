@@ -103,7 +103,6 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     return championship
 
 
-# TODO: Check UI for a button to call this function
 def create_championship(
     year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
 ) -> Championship:
@@ -203,3 +202,29 @@ def create_race_results(
         session.commit()
         race_results = race.results
     return race_results
+
+
+def get_driver_ranks(session: Session, year: int) -> list[dict]:
+    championship = session.exec(
+        select(Championship).where(Championship.year == year)
+    ).first()
+    if championship is None:
+        return []
+
+    race_ids = {race.id for race in championship.races}
+    results = session.exec(select(RaceResult)).all()
+
+    points_by_driver: dict[int, int] = {}
+    for result in results:
+        if result.race_id in race_ids:
+            points_by_driver[result.driver_id] = (
+                points_by_driver.get(result.driver_id, 0) + result.points
+            )
+
+    standings = []
+    for driver_id, points in sorted(
+        points_by_driver.items(), key=lambda x: x[1], reverse=True
+    ):
+        driver = session.get(Driver, driver_id)
+        standings.append({"driver": driver, "points": points})
+    return standings

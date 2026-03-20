@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Driver Standings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo">F1<span> ·</span></div>
+    <ul class="nav-links">
+      <li><a href="/">Calendar</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <p class="season-tag">{{ year }} Season</p>
+    <h1>Driver <em>Standings</em></h1>
+  </header>
+
+  <section class="races-section">
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Pos</th>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Driver</th>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Nationality</th>
+          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in standings %}
+        <tr {% if loop.index == 1 %}style="color: gold;"
+            {% elif loop.index == 2 %}style="color: silver;"
+            {% elif loop.index == 3 %}style="color: #cd7f32;"{% endif %}>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ loop.index }}</td>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.driver.first_name }} {{ entry.driver.last_name }}</td>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.driver.nationality }}</td>
+          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.points }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>

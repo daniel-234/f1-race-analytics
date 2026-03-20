@@ -16,7 +16,7 @@ from .database import (
     create_race_results,
     create_races,
     get_all_races,
-    get_race_by_circuit_id,
+    get_driver_ranks,
     get_result_by_circuit_id,
     get_session,
 )
@@ -26,7 +26,6 @@ from .f1_data import (
     fetch_races,
     fetch_results_by_race,
 )
-from .models import Race
 
 YEAR = 2026
 
@@ -71,13 +70,6 @@ async def index(
     )
 
 
-@app.get("/races/{circuit_id}")
-def get_race(
-    circuit_id: str, session: Annotated[Session, Depends(get_session)]
-) -> Race | None:
-    return get_race_by_circuit_id(session, circuit_id)
-
-
 @app.get("/results/{circuit_id}", response_class=HTMLResponse)
 async def get_race_result(
     circuit_id: str, request: Request, session: Annotated[Session, Depends(get_session)]
@@ -98,4 +90,16 @@ async def replay_page(request: Request):
             "request": request,
             "replay_url": "http://localhost:8001",
         },
+    )
+
+
+@app.get("/standings/drivers", response_class=HTMLResponse)
+async def get_drivers_standings(
+    request: Request, session: Annotated[Session, Depends(get_session)]
+) -> HTMLResponse:
+    standings = get_driver_ranks(session, YEAR)
+    return templates.TemplateResponse(
+        request=request,
+        name="drivers_standings.html",
+        context={"standings": standings, "year": YEAR},
     )

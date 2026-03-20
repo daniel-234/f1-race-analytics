@@ -18,8 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-f1analytics = "f1_race_analytics.__main__:main"
-dev = "f1_race_analytics.__main__:dev"
+start = "f1_race_analytics.__main__:start"
 live = "f1_race_analytics.__main__:live"
 
 [build-system]
