@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -27,7 +28,7 @@ from .f1_data import (
     fetch_results_by_race,
 )
 
-YEAR = 2026
+YEAR = datetime.now().year
 
 
 @asynccontextmanager
