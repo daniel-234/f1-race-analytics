@@ -7,198 +7,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
   <!-- Datastar — ready for live updates -->
   <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.11/bundles/datastar.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --red: #e10600;
-      --dark: #0f0f0f;
-      --mid: #1a1a1a;
-      --card: #222222;
-      --border: #333;
-      --text: #f0f0f0;
-      --muted: #888;
-    }
-
-    body {
-      background: var(--dark);
-      color: var(--text);
-      font-family: 'Barlow', sans-serif;
-      min-height: 100vh;
-    }
-
-    nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2.5rem;
-      height: 60px;
-      background: #000;
-      border-bottom: 3px solid var(--red);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .nav-logo {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 900;
-      font-size: 1.3rem;
-      letter-spacing: 2px;
-      color: var(--red);
-      text-transform: uppercase;
-    }
-
-    .nav-logo span { color: #fff; }
-
-    .nav-links {
-      display: flex;
-      gap: 2.5rem;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 600;
-      font-size: 1rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text);
-      text-decoration: none;
-      transition: color .2s;
-    }
-
-    .nav-links a:hover { color: var(--red); }
-
-    header {
-      padding: 3.5rem 2.5rem 2rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .season-tag {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .85rem;
-      font-weight: 600;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: .6rem;
-    }
-
-    h1 {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 900;
-      font-size: clamp(2.8rem, 6vw, 5rem);
-      line-height: 1;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    h1 em { font-style: normal; color: var(--red); }
-
-    .subtitle {
-      margin-top: .8rem;
-      color: var(--muted);
-      font-size: .95rem;
-      letter-spacing: .5px;
-    }
-
-    .races-section { padding: 2.5rem 2.5rem 4rem; }
-
-    .section-label {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .8rem;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
-
-    .race-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-    }
-
-    .race-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1rem 1rem .9rem;
-      display: flex;
-      flex-direction: column;
-      gap: .35rem;
-      cursor: pointer;
-      transition: border-color .2s, transform .15s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .race-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--border);
-      transition: background .2s;
-    }
-
-    .race-card:hover { border-color: var(--red); transform: translateY(-2px); }
-    .race-card:hover::before { background: var(--red); }
-
-    .race-card.sprint::after {
-      content: 'S';
-      position: absolute;
-      top: 8px; right: 9px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .65rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--red);
-      background: rgba(225,6,0,.12);
-      border: 1px solid rgba(225,6,0,.3);
-      border-radius: 3px;
-      padding: 1px 5px;
-    }
-
-    .round-num {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .7rem;
-      font-weight: 600;
-      letter-spacing: 2px;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    .race-location {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 700;
-      font-size: 1.05rem;
-      letter-spacing: .5px;
-      line-height: 1.1;
-      color: var(--text);
-    }
-
-    .race-circuit { font-size: .78rem; color: var(--muted); line-height: 1.2; }
-
-    .race-date {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .85rem;
-      font-weight: 600;
-      color: #aaa;
-      letter-spacing: .3px;
-      margin-top: .2rem;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
 
   <nav>
-    <div class="nav-logo">F1<span> ·</span></div>
+  <div class="nav-logo">F1<span> ·</span></div>
     <ul class="nav-links">
-      <li><a href="/replay">Replay session</a></li>
-      <li><a href="/live">Live data</a></li>
+      <li><a href="/standings/drivers">Drivers standings</a></li>
+      <!-- TODO -->
+      <!-- <li><a href="/standings/teams">Teams standings</a></li> -->
+      <li><a href="{{ replay_url }}">Replay session</a></li>
     </ul>
   </nav>
 
@@ -216,11 +35,12 @@
     -->
     <div id="race-grid" class="race-grid">
       {% for race in races %}
-      <div class="race-card{% if race.sprint %} sprint{% endif %}">
+      {% set status = race.status().value %}
+      <div class="race-card{% if race.has_sprint %} sprint{% endif %} {{ status }}" {% if status == 'past' %}role="button" onclick="window.location='/results/{{ race.circuit_id }}'"{% endif %}>
         <span class="round-num">Round {{ race.id }}</span>
         <span class="race-location">{{ race.circuit_country }}</span>
         <span class="race-circuit">{{ race.circuit_locality }}</span>
-        <span class="race-date">{{ race.date }}</span>
+        <span class="race-date">{{ race.fp1_date }} &rarr; {{ race.date }}</span>
       </div>
       {% endfor %}
     </div>

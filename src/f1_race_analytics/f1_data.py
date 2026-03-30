@@ -1,19 +1,40 @@
 from datetime import date, datetime
+from enum import Enum
 from typing import NamedTuple
 
 import httpx
 
 JOLPICA_ENDPOINT = "https://api.jolpi.ca/ergast/f1"
-# RACES = "races"
+
+
+class EventStatus(Enum):
+    FUTURE = "future"
+    LIVE = "live"
+    PAST = "past"
+
+
+def compute_status(start_date: date, end_date: date) -> EventStatus:
+    today = date.today()
+    if today < start_date:
+        return EventStatus.FUTURE
+    elif start_date <= today <= end_date:
+        return EventStatus.LIVE
+    else:
+        return EventStatus.PAST
 
 
 class Event(NamedTuple):
     name: str
     circuit_id: str
     date: date
+    fp1_date: date
     circuit_name: str
     circuit_locality: str
     circuit_country: str
+    has_sprint: bool
+
+    def status(self) -> EventStatus:
+        return compute_status(self.fp1_date, self.date)
 
 
 class ConstructorData(NamedTuple):
@@ -56,9 +77,11 @@ def fetch_races(year: int) -> list[Event]:
             race.get("raceName", ""),
             race.get("Circuit", {}).get("circuitId", ""),
             _convert_to_dt(race.get("date", "")),
+            _convert_to_dt(race["FirstPractice"]["date"]),
             race.get("Circuit", {}).get("circuitName", ""),
             race.get("Circuit", {}).get("Location", {}).get("locality", ""),
             race.get("Circuit", {}).get("Location", {}).get("country", ""),
+            "Sprint" in race,
         )
         for race in races
     ]

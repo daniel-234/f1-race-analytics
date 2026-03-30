@@ -2,6 +2,8 @@ from datetime import date
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from .f1_data import EventStatus, compute_status
+
 
 class Championship(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -19,9 +21,14 @@ class Race(SQLModel, table=True):
     name: str
     circuit_id: str
     date: date
+    fp1_date: date
     circuit_name: str
     circuit_locality: str
     circuit_country: str
+    has_sprint: bool
+
+    def status(self) -> EventStatus:
+        return compute_status(self.fp1_date, self.date)
 
     # M-to-1 link to Championsip
     championship_id: int | None = Field(default=None, foreign_key="championship.id")

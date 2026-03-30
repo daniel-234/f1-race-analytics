@@ -7,3 +7,6 @@ class SportmonksDataSource(RaceDataSource):
 
     async def get_drivers(self, fixture_id: str) -> list[dict]:
         raise NotImplementedError
+
+    def is_finished(self) -> bool:
+        raise NotImplementedError
