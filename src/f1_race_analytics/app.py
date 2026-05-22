@@ -4,7 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request
+from decouple import config
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -29,6 +30,7 @@ from .f1_data import (
 )
 
 YEAR = datetime.now().year
+REPLAY_URL = config("REPLAY_URL", default=None)
 
 
 @asynccontextmanager
@@ -67,7 +69,7 @@ async def index(
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"title": "2026 Season", "races": races, "replay_url": "/replay"},
+        context={"title": "2026 Season", "races": races, "replay_url": REPLAY_URL},
     )
 
 
@@ -85,11 +87,13 @@ async def get_race_result(
 
 @app.get("/replay")
 async def replay_page(request: Request):
+    if not REPLAY_URL:
+        raise HTTPException(status_code=404)
     return templates.TemplateResponse(
         "replay_dashboard.html",
         {
             "request": request,
-            "replay_url": "http://localhost:8001",
+            "replay_url": REPLAY_URL,
         },
     )
 
