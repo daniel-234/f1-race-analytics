@@ -1,5 +1,8 @@
+from collections import defaultdict
 from collections.abc import Sequence
+from typing import NamedTuple
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from .f1_data import ConstructorData, DriverData, Event, ResultData
@@ -14,6 +17,11 @@ from .models import (
 
 sqlite_url = "sqlite:///database.db"
 engine = create_engine(sqlite_url, echo=False)
+
+
+class DriverStanding(NamedTuple):
+    driver: Driver
+    points: int
 
 
 def create_db_and_tables():
@@ -51,7 +59,12 @@ def get_result_by_circuit_id(
     race = session.exec(statement).first()
     if race is None:
         return
-    saved_result = select(RaceResult).where(RaceResult.race_id == race.id)
+    saved_result = (
+        select(RaceResult)
+        .where(RaceResult.race_id == race.id)
+        .order_by(RaceResult.position)
+        .options(selectinload(RaceResult.driver))
+    )
     race_result = session.exec(saved_result).all()
     return race_result
 
@@ -81,10 +94,12 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
                 name=race.name,
                 circuit_id=race.circuit_id,
                 date=race.date,
+                fp1_date=race.fp1_date,
                 circuit_name=race.circuit_name,
                 circuit_locality=race.circuit_locality,
                 circuit_country=race.circuit_country,
                 championship=championship,
+                has_sprint=race.has_sprint,
             )
             for race in races_data
         ]
@@ -95,7 +110,6 @@ def create_races(year: int, races_data: list[Event]) -> Championship:
     return championship
 
 
-# TODO: Check UI for a button to call this function
 def create_championship(
     year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
 ) -> Championship:
@@ -195,3 +209,32 @@ def create_race_results(
         session.commit()
         race_results = race.results
     return race_results
+
+
+def get_driver_ranks(session: Session, year: int) -> list[DriverStanding]:
+    championship = session.exec(
+        select(Championship).where(Championship.year == year)
+    ).first()
+    if championship is None:
+        return []
+
+    race_ids = {race.id for race in championship.races if race.id is not None}
+    results = session.exec(
+        select(RaceResult).where(RaceResult.race_id.in_(race_ids))
+    ).all()
+
+    points_by_driver: dict[int, int] = defaultdict(int)
+    for result in results:
+        if result.driver_id is None:
+            continue
+        points_by_driver[result.driver_id] += result.points
+
+    standings = []
+    for driver_id, points in sorted(
+        points_by_driver.items(), key=lambda x: x[1], reverse=True
+    ):
+        driver = session.get(Driver, driver_id)
+        if driver is None:
+            continue
+        standings.append(DriverStanding(driver=driver, points=points))
+    return standings
