@@ -1,4 +1,6 @@
+from collections import defaultdict
 from collections.abc import Sequence
+from typing import NamedTuple
 
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -15,6 +17,11 @@ from .models import (
 
 sqlite_url = "sqlite:///database.db"
 engine = create_engine(sqlite_url, echo=False)
+
+
+class DriverStanding(NamedTuple):
+    driver: Driver
+    points: int
 
 
 def create_db_and_tables():
@@ -204,27 +211,30 @@ def create_race_results(
     return race_results
 
 
-def get_driver_ranks(session: Session, year: int) -> list[dict]:
+def get_driver_ranks(session: Session, year: int) -> list[DriverStanding]:
     championship = session.exec(
         select(Championship).where(Championship.year == year)
     ).first()
     if championship is None:
         return []
 
-    race_ids = {race.id for race in championship.races}
-    results = session.exec(select(RaceResult)).all()
+    race_ids = {race.id for race in championship.races if race.id is not None}
+    results = session.exec(
+        select(RaceResult).where(RaceResult.race_id.in_(race_ids))
+    ).all()
 
-    points_by_driver: dict[int, int] = {}
+    points_by_driver: dict[int, int] = defaultdict(int)
     for result in results:
-        if result.race_id in race_ids:
-            points_by_driver[result.driver_id] = (
-                points_by_driver.get(result.driver_id, 0) + result.points
-            )
+        if result.driver_id is None:
+            continue
+        points_by_driver[result.driver_id] += result.points
 
     standings = []
     for driver_id, points in sorted(
         points_by_driver.items(), key=lambda x: x[1], reverse=True
     ):
         driver = session.get(Driver, driver_id)
-        standings.append({"driver": driver, "points": points})
+        if driver is None:
+            continue
+        standings.append(DriverStanding(driver=driver, points=points))
     return standings
