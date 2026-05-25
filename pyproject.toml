@@ -31,3 +31,6 @@ dev = [
     "pytest-cov>=7.0.0",
     "ty>=0.0.17",
 ]
+
+[tool.fastapi]
+entrypoint = "src.f1_race_analytics.app:app"
