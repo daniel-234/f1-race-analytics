@@ -1,7 +1,7 @@
 [project]
 name = "f1-race-analytics"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI analytics dashboard for Formula 1 race data, with live-position streaming over SSE"
 readme = "README.md"
 authors = [
     { name = "Daniele", email = "danielerb.dev@gmail.com" }
