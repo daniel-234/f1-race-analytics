@@ -15,8 +15,10 @@ historical race data from the Jolpica F1 API, serves it through a FastAPI web
 app with Jinja2 dashboards, and streams simulated live race positions over
 Server-Sent Events using Datastar.
 
-The intent is to demonstrate modern Python tooling, FastAPI architecture
-(including a Repository Pattern for data sources), thoughtful data modeling
+The intent is to demonstrate modern Python tooling, FastAPI architecture, including
+a Repository Pattern for data sources (as explained very well in [this blog
+post](https://belderbos.dev/blog/repository-pattern-swappable-data-sources/),
+that references the work done here), thoughtful data modeling
 (3-way association table), async streaming, and disciplined development
 workflow (scoped PRs, scoped issues, env-var-gated features).
 
@@ -91,11 +93,14 @@ Requires Python 3.13 and [uv](https://docs.astral.sh/uv/).
 uv sync
 
 # Run the main app (port 8000)
-uv run fastapi dev app.py
+uv run start
 
 # In a second terminal, run the live API (port 8001) for the replay dashboard
-uv run fastapi dev live_api.py --port 8001
+uv run live
 ```
+
+During active development, `uv run fastapi dev` runs the main app with auto-reload
+on file changes (via the `[tool.fastapi]` entrypoint, so no filename argument is needed).
 
 Set `REPLAY_URL` in your local environment to enable the replay dashboard nav
 link and route. Leave it unset to mirror production behavior.
