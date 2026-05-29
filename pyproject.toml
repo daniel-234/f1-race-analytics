@@ -32,3 +32,7 @@ dev = [
 
 [tool.fastapi]
 entrypoint = "src.f1_race_analytics.app:app"
+
+[tool.pytest.ini_options]
+testpaths = ["src/f1_race_analytics/tests"]
+addopts = "--cov=f1_race_analytics --cov-report=term-missing --cov-report=html --cov-report=xml"
