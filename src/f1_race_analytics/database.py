@@ -24,6 +24,11 @@ class DriverStanding(NamedTuple):
     points: int
 
 
+class ConstructorStanding(NamedTuple):
+    constructor: Constructor
+    points: int
+
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
@@ -237,4 +242,41 @@ def get_driver_ranks(session: Session, year: int) -> list[DriverStanding]:
         if driver is None:
             continue
         standings.append(DriverStanding(driver=driver, points=points))
+    return standings
+
+
+def get_constructor_ranks(session: Session, year: int) -> list[ConstructorStanding]:
+    championship = session.exec(
+        select(Championship).where(Championship.year == year)
+    ).first()
+    if championship is None:
+        return []
+
+    race_ids = {race.id for race in championship.races if race.id is not None}
+    results = session.exec(
+        select(RaceResult).where(RaceResult.race_id.in_(race_ids))
+    ).all()
+
+    links = session.exec(
+        select(ChampionshipEntryLink).where(
+            ChampionshipEntryLink.championship_id == championship.id
+        )
+    ).all()
+    driver_to_constructor = {link.driver_id: link.constructor_id for link in links}
+
+    points_by_constructor: dict[int, int] = defaultdict(int)
+    for result in results:
+        if result.driver_id is None:
+            continue
+        constructor_id = driver_to_constructor[result.driver_id]
+        points_by_constructor[constructor_id] += result.points
+
+    standings = []
+    for constructor_id, points in sorted(
+        points_by_constructor.items(), key=lambda x: x[1], reverse=True
+    ):
+        constructor = session.get(Constructor, constructor_id)
+        if constructor is None:
+            continue
+        standings.append(ConstructorStanding(constructor=constructor, points=points))
     return standings

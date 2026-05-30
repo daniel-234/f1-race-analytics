@@ -18,6 +18,7 @@ from .database import (
     create_race_results,
     create_races,
     get_all_races,
+    get_constructor_ranks,
     get_driver_ranks,
     get_result_by_circuit_id,
     get_session,
@@ -106,5 +107,17 @@ async def get_drivers_standings(
     return templates.TemplateResponse(
         request=request,
         name="drivers_standings.html",
+        context={"standings": standings, "year": YEAR},
+    )
+
+
+@app.get("/standings/constructors", response_class=HTMLResponse)
+async def get_constructors_standings(
+    request: Request, session: Annotated[Session, Depends(get_session)]
+) -> HTMLResponse:
+    standings = get_constructor_ranks(session, YEAR)
+    return templates.TemplateResponse(
+        request=request,
+        name="constructors_standings.html",
         context={"standings": standings, "year": YEAR},
     )
