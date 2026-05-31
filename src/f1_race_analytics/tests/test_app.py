@@ -7,10 +7,12 @@ from f1_race_analytics.database import (
     clear_db_and_tables,
     create_championship,
     create_db_and_tables,
+    create_race_results,
     create_races,
     engine,
+    get_constructor_ranks,
 )
-from f1_race_analytics.f1_data import ConstructorData, DriverData, Event
+from f1_race_analytics.f1_data import ConstructorData, DriverData, Event, ResultData
 from f1_race_analytics.models import (
     Championship,
     ChampionshipEntryLink,
@@ -115,6 +117,60 @@ def constructor_driver_pairs():
                 first_name="Lance",
                 last_name="Stroll",
                 nationality="Canadian",
+            ),
+        ),
+    ]
+
+
+@pytest.fixture
+def standings_pairs():
+    return [
+        (
+            ConstructorData(
+                constructor_id="ferrari", name="Ferrari", nationality="Italian"
+            ),
+            DriverData(
+                driver_id="leclerc",
+                number="16",
+                first_name="Charles",
+                last_name="Leclerc",
+                nationality="Monegasque",
+            ),
+        ),
+        (
+            ConstructorData(
+                constructor_id="ferrari", name="Ferrari", nationality="Italian"
+            ),
+            DriverData(
+                driver_id="hamilton",
+                number="44",
+                first_name="Lewis",
+                last_name="Hamilton",
+                nationality="British",
+            ),
+        ),
+        (
+            ConstructorData(
+                constructor_id="mercedes", name="Mercedes", nationality="German"
+            ),
+            DriverData(
+                driver_id="antonelli",
+                number="12",
+                first_name="Andrea Kimi",
+                last_name="Antonelli",
+                nationality="Italian",
+            ),
+        ),
+        (
+            ConstructorData(
+                constructor_id="mercedes", name="Mercedes", nationality="German"
+            ),
+            DriverData(
+                driver_id="russell",
+                number="63",
+                first_name="George",
+                last_name="Russell",
+                nationality="British",
             ),
         ),
     ]
@@ -377,3 +433,35 @@ def test_championship_entry_link():
         assert len(hamilton.entry_links) == 1
         assert hamilton.entry_links[0].constructor.name == "Mercedes"
         assert hamilton.entry_links[0].championship.year == 2025
+
+
+def test_get_constructor_ranks(race_events, standings_pairs):
+    australian_results = [
+        ResultData("albert_park", "russell", "1", "25"),
+        ResultData("albert_park", "antonelli", "2", "18"),
+        ResultData("albert_park", "leclerc", "3", "15"),
+        ResultData("albert_park", "hamilton", "4", "12"),
+    ]
+    japanese_results = [
+        ResultData("suzuka", "antonelli", "1", "25"),
+        ResultData("suzuka", "leclerc", "3", "15"),
+        ResultData("suzuka", "russell", "4", "12"),
+        ResultData(
+            "suzuka",
+            "hamilton",
+            "6",
+            "8",
+        ),
+    ]
+    create_races(2026, race_events)
+    create_championship(2026, standings_pairs)
+    create_race_results(2026, australian_results)
+    create_race_results(2026, japanese_results)
+
+    with Session(engine) as session:
+        standings = get_constructor_ranks(session, 2026)
+
+        assert [(s.constructor.name, s.points) for s in standings] == [
+            ("Mercedes", 80),
+            ("Ferrari", 50),
+        ]
