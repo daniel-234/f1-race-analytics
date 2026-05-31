@@ -192,3 +192,32 @@
       letter-spacing: .3px;
       margin-top: .2rem;
     }
+
+    /* Data tables — standings, race results, live positions */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th,
+    .data-table td {
+      padding: .5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      text-align: left;
+      color: var(--muted);
+      font-family: 'Barlow Condensed', sans-serif;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Podium rows (top three) */
+    .data-table .pos-1 { color: gold; }
+    .data-table .pos-2 { color: silver; }
+    .data-table .pos-3 { color: #cd7f32; }
+
+    /* Live positions — direction of movement */
+    .data-table .row-up   { background: rgba(0, 255, 0, .08); }
+    .data-table .row-down { background: rgba(255, 0, 0, .08); }
+    .data-table .delta-up   { color: green; }
+    .data-table .delta-down { color: red; }
+    .data-table .delta-flat { color: var(--muted); }

@@ -23,24 +23,22 @@
   </header>
 
   <section class="races-section">
-    <table style="width:100%; border-collapse: collapse;">
+    <table class="data-table">
       <thead>
         <tr>
-          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Pos</th>
-          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Driver</th>
-          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Nationality</th>
-          <th style="text-align:left; padding: .5rem 1rem; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border);">Points</th>
+          <th>Pos</th>
+          <th>Driver</th>
+          <th>Nationality</th>
+          <th>Points</th>
         </tr>
       </thead>
       <tbody>
         {% for entry in standings %}
-        <tr {% if loop.index == 1 %}style="color: gold;"
-            {% elif loop.index == 2 %}style="color: silver;"
-            {% elif loop.index == 3 %}style="color: #cd7f32;"{% endif %}>
-          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ loop.index }}</td>
-          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.driver.first_name }} {{ entry.driver.last_name }}</td>
-          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.driver.nationality }}</td>
-          <td style="padding: .5rem 1rem; border-bottom: 1px solid var(--border);">{{ entry.points }}</td>
+        <tr{% if loop.index == 1 %} class="pos-1"{% elif loop.index == 2 %} class="pos-2"{% elif loop.index == 3 %} class="pos-3"{% endif %}>
+          <td>{{ loop.index }}</td>
+          <td>{{ entry.driver.first_name }} {{ entry.driver.last_name }}</td>
+          <td>{{ entry.driver.nationality }}</td>
+          <td>{{ entry.points }}</td>
         </tr>
         {% endfor %}
       </tbody>
