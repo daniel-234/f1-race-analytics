@@ -223,12 +223,6 @@ def test_create_races(race_events):
 def test_create_championship(constructor_driver_pairs):
     create_championship(2026, constructor_driver_pairs)
     with Session(engine) as read_session:
-        all_championships = read_session.exec(select(Championship)).all()
-        all_links = read_session.exec(select(ChampionshipEntryLink)).all()
-        print("Championships:", all_championships)
-        print("Links:", all_links)
-
-    with Session(engine) as read_session:
         championship = read_session.exec(
             select(Championship).where(Championship.year == 2026)
         ).first()
@@ -243,6 +237,7 @@ def test_create_championship(constructor_driver_pairs):
         pairs = [(link.constructor, link.driver) for link in links]
 
         assert championship.year == 2026
+        # constructors are deduped, so a team keeps one id (Aston is 2, not 3)
         assert pairs == [
             (
                 Constructor(
@@ -311,39 +306,6 @@ def test_create_championship(constructor_driver_pairs):
         ]
 
 
-def test_contructor_drivers_association(constructor_driver_pairs):
-    create_championship(2026, constructor_driver_pairs)
-    with Session(engine) as read_session:
-        championship = read_session.exec(
-            select(Championship).where(Championship.year == 2026)
-        ).first()
-
-        assert championship is not None
-
-        links = read_session.exec(
-            select(ChampionshipEntryLink).where(
-                ChampionshipEntryLink.championship_id == championship.id
-            )
-        ).all()
-        pairs = [(link.constructor, link.driver) for link in links]
-        assert pairs[2] == (
-            Constructor(
-                nationality="British",
-                constructor_id="aston_martin",
-                name="Aston Martin",
-                id=2,
-            ),  # not 3
-            Driver(
-                driver_id="alonso",
-                last_name="Alonso",
-                id=3,
-                number="14",
-                first_name="Fernando",
-                nationality="Spanish",
-            ),
-        )
-
-
 def test_championship_entry_link():
     """
     Test the 3-way link table (ChampionshipEntryLink) that connects
@@ -351,10 +313,6 @@ def test_championship_entry_link():
     This pattern allows us to model: "Driver X drove for Constructor Y
     in Championship Z" - a many-to-many-to-many relationship.
     """
-    from sqlmodel import Session
-
-    from f1_race_analytics.database import engine
-    from f1_race_analytics.models import Championship
 
     with Session(engine) as session:
         # Step 1: Create the parent entities independently
