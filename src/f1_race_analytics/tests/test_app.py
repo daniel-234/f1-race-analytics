@@ -1,15 +1,12 @@
 from datetime import date
 
 import pytest
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from f1_race_analytics.database import (
-    clear_db_and_tables,
     create_championship,
-    create_db_and_tables,
     create_race_results,
     create_races,
-    engine,
     get_constructor_ranks,
 )
 from f1_race_analytics.f1_data import ConstructorData, DriverData, Event, ResultData
@@ -22,10 +19,13 @@ from f1_race_analytics.models import (
 )
 
 
-@pytest.fixture(autouse=True)
-def setup_database():
-    clear_db_and_tables()
-    create_db_and_tables()
+@pytest.fixture
+def session():
+    engine = create_engine("sqlite://")
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+    engine.dispose()
 
 
 @pytest.fixture
@@ -176,8 +176,8 @@ def standings_pairs():
     ]
 
 
-def test_create_races(race_events):
-    championship = create_races(2026, race_events)
+def test_create_races(session, race_events):
+    championship = create_races(session, 2026, race_events)
     assert championship.id == 1
     assert championship.year == 2026
     assert championship.races == [
@@ -220,93 +220,92 @@ def test_create_races(race_events):
     ]
 
 
-def test_create_championship(constructor_driver_pairs):
-    create_championship(2026, constructor_driver_pairs)
-    with Session(engine) as read_session:
-        championship = read_session.exec(
-            select(Championship).where(Championship.year == 2026)
-        ).first()
+def test_create_championship(session, constructor_driver_pairs):
+    create_championship(session, 2026, constructor_driver_pairs)
+    championship = session.exec(
+        select(Championship).where(Championship.year == 2026)
+    ).first()
 
-        assert championship is not None
+    assert championship is not None
 
-        links = read_session.exec(
-            select(ChampionshipEntryLink).where(
-                ChampionshipEntryLink.championship_id == championship.id
-            )
-        ).all()
-        pairs = [(link.constructor, link.driver) for link in links]
+    links = session.exec(
+        select(ChampionshipEntryLink).where(
+            ChampionshipEntryLink.championship_id == championship.id
+        )
+    ).all()
+    pairs = [(link.constructor, link.driver) for link in links]
 
-        assert championship.year == 2026
-        # constructors are deduped, so a team keeps one id (Aston is 2, not 3)
-        assert pairs == [
-            (
-                Constructor(
-                    nationality="French",
-                    constructor_id="alpine",
-                    name="Alpine F1 Team",
-                    id=1,
-                ),
-                Driver(
-                    driver_id="colapinto",
-                    last_name="Colapinto",
-                    id=1,
-                    number="43",
-                    first_name="Franco",
-                    nationality="Argentine",
-                ),
+    assert championship.year == 2026
+    # constructors are deduped, so a team keeps one id (Aston is 2, not 3)
+    assert pairs == [
+        (
+            Constructor(
+                nationality="French",
+                constructor_id="alpine",
+                name="Alpine F1 Team",
+                id=1,
             ),
-            (
-                Constructor(
-                    nationality="French",
-                    constructor_id="alpine",
-                    name="Alpine F1 Team",
-                    id=1,
-                ),
-                Driver(
-                    driver_id="gasly",
-                    last_name="Gasly",
-                    id=2,
-                    number="10",
-                    first_name="Pierre",
-                    nationality="French",
-                ),
+            Driver(
+                driver_id="colapinto",
+                last_name="Colapinto",
+                id=1,
+                number="43",
+                first_name="Franco",
+                nationality="Argentine",
             ),
-            (
-                Constructor(
-                    nationality="British",
-                    constructor_id="aston_martin",
-                    name="Aston Martin",
-                    id=2,
-                ),
-                Driver(
-                    driver_id="alonso",
-                    last_name="Alonso",
-                    id=3,
-                    number="14",
-                    first_name="Fernando",
-                    nationality="Spanish",
-                ),
+        ),
+        (
+            Constructor(
+                nationality="French",
+                constructor_id="alpine",
+                name="Alpine F1 Team",
+                id=1,
             ),
-            (
-                Constructor(
-                    nationality="British",
-                    constructor_id="aston_martin",
-                    name="Aston Martin",
-                    id=2,
-                ),
-                Driver(
-                    driver_id="stroll",
-                    last_name="Stroll",
-                    id=4,
-                    number="18",
-                    first_name="Lance",
-                    nationality="Canadian",
-                ),
+            Driver(
+                driver_id="gasly",
+                last_name="Gasly",
+                id=2,
+                number="10",
+                first_name="Pierre",
+                nationality="French",
             ),
-        ]
+        ),
+        (
+            Constructor(
+                nationality="British",
+                constructor_id="aston_martin",
+                name="Aston Martin",
+                id=2,
+            ),
+            Driver(
+                driver_id="alonso",
+                last_name="Alonso",
+                id=3,
+                number="14",
+                first_name="Fernando",
+                nationality="Spanish",
+            ),
+        ),
+        (
+            Constructor(
+                nationality="British",
+                constructor_id="aston_martin",
+                name="Aston Martin",
+                id=2,
+            ),
+            Driver(
+                driver_id="stroll",
+                last_name="Stroll",
+                id=4,
+                number="18",
+                first_name="Lance",
+                nationality="Canadian",
+            ),
+        ),
+    ]
 
 
-def test_championship_entry_link():
+def test_championship_entry_link(session):
     """
     Test the 3-way link table (ChampionshipEntryLink) that connects
     Championship, Constructor, and Driver.
@@ -314,86 +313,84 @@ def test_championship_entry_link():
     in Championship Z" - a many-to-many-to-many relationship.
     """
 
-    with Session(engine) as session:
-        # Step 1: Create the parent entities independently
-        championship = Championship(year=2025)
-        session.add(championship)
-        session.commit()
-        session.refresh(championship)
+    championship = Championship(year=2025)
+    session.add(championship)
+    session.commit()
+    session.refresh(championship)
 
-        ferrari = Constructor(
-            constructor_id="ferrari", name="Ferrari", nationality="Italian"
-        )
-        mercedes = Constructor(
-            constructor_id="mercedes", name="Mercedes", nationality="German"
-        )
-        session.add_all([ferrari, mercedes])
-        session.commit()
-        session.refresh(ferrari)
-        session.refresh(mercedes)
+    ferrari = Constructor(
+        constructor_id="ferrari", name="Ferrari", nationality="Italian"
+    )
+    mercedes = Constructor(
+        constructor_id="mercedes", name="Mercedes", nationality="German"
+    )
+    session.add_all([ferrari, mercedes])
+    session.commit()
+    session.refresh(ferrari)
+    session.refresh(mercedes)
 
-        leclerc = Driver(
-            driver_id="leclerc",
-            number="16",
-            first_name="Charles",
-            last_name="Leclerc",
-            nationality="Monegasque",
-        )
-        hamilton = Driver(
-            driver_id="hamilton",
-            number="44",
-            first_name="Lewis",
-            last_name="Hamilton",
-            nationality="British",
-        )
-        session.add_all([leclerc, hamilton])
-        session.commit()
-        session.refresh(leclerc)
-        session.refresh(hamilton)
+    leclerc = Driver(
+        driver_id="leclerc",
+        number="16",
+        first_name="Charles",
+        last_name="Leclerc",
+        nationality="Monegasque",
+    )
+    hamilton = Driver(
+        driver_id="hamilton",
+        number="44",
+        first_name="Lewis",
+        last_name="Hamilton",
+        nationality="British",
+    )
+    session.add_all([leclerc, hamilton])
+    session.commit()
+    session.refresh(leclerc)
+    session.refresh(hamilton)
 
-        # Step 2: Create the link entries using the IDs from the parent entities
-        # Each link represents: "This driver drove for this constructor in this championship"
+    # Step 2: Create the link entries using the IDs from the parent entities
+    # Each link represents: "This driver drove for this constructor in this championship"
 
-        # Ensure all entities were persisted before creating links
-        assert championship.id is not None
-        assert ferrari.id is not None
-        assert leclerc.id is not None
+    # Ensure all entities were persisted before creating links
+    assert championship.id is not None
+    assert ferrari.id is not None
+    assert leclerc.id is not None
 
-        link1 = ChampionshipEntryLink(
-            championship_id=championship.id,
-            constructor_id=ferrari.id,
-            driver_id=leclerc.id,
-        )
+    link1 = ChampionshipEntryLink(
+        championship_id=championship.id,
+        constructor_id=ferrari.id,
+        driver_id=leclerc.id,
+    )
 
-        assert championship.id is not None
-        assert mercedes.id is not None
-        assert hamilton.id is not None
+    assert championship.id is not None
+    assert mercedes.id is not None
+    assert hamilton.id is not None
 
-        link2 = ChampionshipEntryLink(
-            championship_id=championship.id,
-            constructor_id=mercedes.id,
-            driver_id=hamilton.id,
-        )
-        session.add_all([link1, link2])
-        session.commit()
+    link2 = ChampionshipEntryLink(
+        championship_id=championship.id,
+        constructor_id=mercedes.id,
+        driver_id=hamilton.id,
+    )
+    session.add_all([link1, link2])
+    session.commit()
 
-        # Step 3: Verify navigation from Championship -> entries
-        session.refresh(championship)
-        assert len(championship.entry_links) == 2
+    # Step 3: Verify navigation from Championship -> entries
+    session.refresh(championship)
+    assert len(championship.entry_links) == 2
 
-        # Step 4: Verify navigation from Constructor -> entries -> Driver
-        session.refresh(ferrari)
-        assert len(ferrari.entry_links) == 1
-        assert ferrari.entry_links[0].driver.last_name == "Leclerc"
+    # Step 4: Verify navigation from Constructor -> entries -> Driver
+    session.refresh(ferrari)
+    assert len(ferrari.entry_links) == 1
+    assert ferrari.entry_links[0].driver.last_name == "Leclerc"
 
-        # Step 5: Verify navigation from Driver -> entries -> Constructor and Championship
-        session.refresh(hamilton)
-        assert len(hamilton.entry_links) == 1
-        assert hamilton.entry_links[0].constructor.name == "Mercedes"
-        assert hamilton.entry_links[0].championship.year == 2025
+    # Step 5: Verify navigation from Driver -> entries -> Constructor and Championship
+    session.refresh(hamilton)
+    assert len(hamilton.entry_links) == 1
+    assert hamilton.entry_links[0].constructor.name == "Mercedes"
+    assert hamilton.entry_links[0].championship.year == 2025
 
 
-def test_get_constructor_ranks(race_events, standings_pairs):
+def test_get_constructor_ranks(session, race_events, standings_pairs):
     australian_results = [
         ResultData("albert_park", "russell", "1", "25"),
         ResultData("albert_park", "antonelli", "2", "18"),
@@ -411,15 +408,14 @@ def test_get_constructor_ranks(race_events, standings_pairs):
             "8",
         ),
     ]
-    create_races(2026, race_events)
-    create_championship(2026, standings_pairs)
-    create_race_results(2026, australian_results)
-    create_race_results(2026, japanese_results)
+    create_races(session, 2026, race_events)
+    create_championship(session, 2026, standings_pairs)
+    create_race_results(session, 2026, australian_results)
+    create_race_results(session, 2026, japanese_results)
 
-    with Session(engine) as session:
-        standings = get_constructor_ranks(session, 2026)
+    standings = get_constructor_ranks(session, 2026)
 
-        assert [(s.constructor.name, s.points) for s in standings] == [
-            ("Mercedes", 80),
-            ("Ferrari", 50),
-        ]
+    assert [(s.constructor.name, s.points) for s in standings] == [
+        ("Mercedes", 80),
+        ("Ferrari", 50),
+    ]
