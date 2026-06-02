@@ -17,6 +17,7 @@ from .database import (
     create_db_and_tables,
     create_race_results,
     create_races,
+    engine,
     get_all_races,
     get_constructor_ranks,
     get_driver_ranks,
@@ -39,14 +40,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     clear_db_and_tables()
     create_db_and_tables()
     races_data = fetch_races(YEAR)
-    create_races(YEAR, races_data)
     constructor_driver_pairs = fetch_constructor_driver_pairs(YEAR)
-    create_championship(YEAR, constructor_driver_pairs)
-    for race in races_data:
-        if race.status() == EventStatus.PAST:
-            result_data = fetch_results_by_race(YEAR, race.circuit_id)
-            if result_data:
-                create_race_results(YEAR, result_data)
+    with Session(engine) as session:
+        create_races(session, YEAR, races_data)
+        create_championship(session, YEAR, constructor_driver_pairs)
+        for race in races_data:
+            if race.status() == EventStatus.PAST:
+                result_data = fetch_results_by_race(YEAR, race.circuit_id)
+                if result_data:
+                    create_race_results(session, YEAR, result_data)
     yield
 
 
@@ -59,7 +61,8 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 def populate_db():
     create_db_and_tables()
     races_data = fetch_races(YEAR)
-    create_races(YEAR, races_data)
+    with Session(engine) as session:
+        create_races(session, YEAR, races_data)
 
 
 @app.get("/", response_class=HTMLResponse)

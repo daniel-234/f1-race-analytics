@@ -74,7 +74,7 @@ def get_result_by_circuit_id(
     return race_result
 
 
-def get_or_create_championship_by_year(year: int, session: Session) -> Championship:
+def get_or_create_championship_by_year(session: Session, year: int) -> Championship:
     # Check if there is already a Championship instance for "year";
     # otherwise, create one
     statement = select(Championship).where(Championship.year == year)
@@ -87,132 +87,130 @@ def get_or_create_championship_by_year(year: int, session: Session) -> Champions
     return championship
 
 
-def create_races(year: int, races_data: list[Event]) -> Championship:
+def create_races(session: Session, year: int, races_data: list[Event]) -> Championship:
     """
     Create the championship and races instances for the given year
     """
-    with Session(engine) as session:
-        championship = get_or_create_championship_by_year(year, session)
+    championship = get_or_create_championship_by_year(session, year)
+    races = [
+        Race(
+            name=race.name,
+            circuit_id=race.circuit_id,
+            date=race.date,
+            fp1_date=race.fp1_date,
+            circuit_name=race.circuit_name,
+            circuit_locality=race.circuit_locality,
+            circuit_country=race.circuit_country,
+            championship=championship,
+            has_sprint=race.has_sprint,
+        )
+        for race in races_data
+    ]
 
-        races = [
-            Race(
-                name=race.name,
-                circuit_id=race.circuit_id,
-                date=race.date,
-                fp1_date=race.fp1_date,
-                circuit_name=race.circuit_name,
-                circuit_locality=race.circuit_locality,
-                circuit_country=race.circuit_country,
-                championship=championship,
-                has_sprint=race.has_sprint,
-            )
-            for race in races_data
-        ]
-
-        session.add_all(races)
-        session.commit()
-        session.refresh(championship, attribute_names=["year", "races"])
+    session.add_all(races)
+    session.commit()
+    session.refresh(championship, attribute_names=["year", "races"])
     return championship
 
 
 def create_championship(
-    year: int, constructor_driver_pairs: list[tuple[ConstructorData, DriverData]]
+    session: Session,
+    year: int,
+    constructor_driver_pairs: list[tuple[ConstructorData, DriverData]],
 ) -> Championship:
     """
     Create the championship and the linked tables for constructors and their drivers
     """
-    with Session(engine) as session:
-        championship = get_or_create_championship_by_year(year, session)
+    championship = get_or_create_championship_by_year(session, year)
 
-        for constructor_data, driver_data in constructor_driver_pairs:
-            # Look up existing constructor, or create new
-            constructor = session.exec(
-                select(Constructor).where(
-                    Constructor.constructor_id == constructor_data.constructor_id
-                )
-            ).first()
-            if constructor is None:
-                constructor = Constructor(
-                    constructor_id=constructor_data.constructor_id,
-                    name=constructor_data.name,
-                    nationality=constructor_data.nationality,
-                )
-                session.add(constructor)
-            # Look up existing driver, or create new
-            driver = session.exec(
-                select(Driver).where(Driver.driver_id == driver_data.driver_id)
-            ).first()
-            if driver is None:
-                driver = Driver(
-                    driver_id=driver_data.driver_id,
-                    number=driver_data.number,
-                    first_name=driver_data.first_name,
-                    last_name=driver_data.last_name,
-                    nationality=driver_data.nationality,
-                )
-                session.add(driver)
-            session.commit()
+    for constructor_data, driver_data in constructor_driver_pairs:
+        # Look up existing constructor, or create new
+        constructor = session.exec(
+            select(Constructor).where(
+                Constructor.constructor_id == constructor_data.constructor_id
+            )
+        ).first()
+        if constructor is None:
+            constructor = Constructor(
+                constructor_id=constructor_data.constructor_id,
+                name=constructor_data.name,
+                nationality=constructor_data.nationality,
+            )
+            session.add(constructor)
+        # Look up existing driver, or create new
+        driver = session.exec(
+            select(Driver).where(Driver.driver_id == driver_data.driver_id)
+        ).first()
+        if driver is None:
+            driver = Driver(
+                driver_id=driver_data.driver_id,
+                number=driver_data.number,
+                first_name=driver_data.first_name,
+                last_name=driver_data.last_name,
+                nationality=driver_data.nationality,
+            )
+            session.add(driver)
+        session.commit()
 
-            if championship.id is None or constructor.id is None or driver.id is None:
-                raise ValueError(
-                    "Cannot create link: one or more entities have not been saved yet."
-                )
-
-            link = ChampionshipEntryLink(
-                championship_id=championship.id,
-                constructor_id=constructor.id,
-                driver_id=driver.id,
+        if championship.id is None or constructor.id is None or driver.id is None:
+            raise ValueError(
+                "Cannot create link: one or more entities have not been saved yet."
             )
 
-            session.add(link)
-            session.commit()
+        link = ChampionshipEntryLink(
+            championship_id=championship.id,
+            constructor_id=constructor.id,
+            driver_id=driver.id,
+        )
 
-        session.refresh(championship)
+        session.add(link)
+        session.commit()
+
+    session.refresh(championship)
 
     return championship
 
 
 def create_race_results(
-    year: int, race_result_data: list[ResultData]
+    session: Session, year: int, race_result_data: list[ResultData]
 ) -> list[RaceResult] | None:
     """
     Create the RaceResult table, linking results to races for a given year
     """
-    with Session(engine) as session:
-        get_or_create_championship_by_year(year, session)
+    get_or_create_championship_by_year(session, year)
 
-        race_statement = select(Race).where(
-            Race.circuit_id == race_result_data[0].circuit_id
+    race_statement = select(Race).where(
+        Race.circuit_id == race_result_data[0].circuit_id
+    )
+    race = session.exec(race_statement).first()
+    if race is None:
+        return []
+
+    for race_result in race_result_data:
+        # Get the driver by the API's driver_id, that is a string
+        # used inside the API to crossreference the endpoints.
+        driver = session.exec(
+            select(Driver).where(Driver.driver_id == race_result.driver_id)
+        ).first()
+        if driver is None:
+            continue
+        # Use the Driver id primary key (int) as foreign key in the link table
+        try:
+            position = int(race_result.position)
+            points = int(race_result.points)
+        except ValueError:
+            # Skip drivers with non-numeric positions (DSQ, etc.)
+            continue
+        result = RaceResult(
+            race_id=race.id,
+            driver_id=driver.id,
+            position=position,
+            points=points,
         )
-        race = session.exec(race_statement).first()
-        if race is None:
-            return []
+        session.add(result)
 
-        for race_result in race_result_data:
-            # Get the driver by the API's driver_id, that is a string
-            # used inside the API to crossreference the endpoints.
-            driver = session.exec(
-                select(Driver).where(Driver.driver_id == race_result.driver_id)
-            ).first()
-            if driver is None:
-                continue
-            # Use the Driver id primary key (int) as foreign key in the link table
-            try:
-                position = int(race_result.position)
-                points = int(race_result.points)
-            except ValueError:
-                # Skip drivers with non-numeric positions (DSQ, etc.)
-                continue
-            result = RaceResult(
-                race_id=race.id,
-                driver_id=driver.id,
-                position=position,
-                points=points,
-            )
-            session.add(result)
-
-        session.commit()
-        race_results = race.results
+    session.commit()
+    race_results = race.results
     return race_results
 
 
