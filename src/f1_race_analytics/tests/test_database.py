@@ -78,6 +78,32 @@ def constructor_driver_pairs():
     ]
 
 
+@pytest.fixture
+def seeded_standings(session, race_events, standings_pairs):
+    """Seed two races of results; the rank tests' expected points are computed from this data."""
+    australian_results = [
+        ResultData("albert_park", "russell", "1", "25"),
+        ResultData("albert_park", "antonelli", "2", "18"),
+        ResultData("albert_park", "leclerc", "3", "15"),
+        ResultData("albert_park", "hamilton", "4", "12"),
+    ]
+    japanese_results = [
+        ResultData("suzuka", "antonelli", "1", "25"),
+        ResultData("suzuka", "leclerc", "3", "15"),
+        ResultData("suzuka", "russell", "4", "12"),
+        ResultData(
+            "suzuka",
+            "hamilton",
+            "6",
+            "8",
+        ),
+    ]
+    create_races(session, 2026, race_events)
+    create_championship(session, 2026, standings_pairs)
+    create_race_results(session, 2026, australian_results)
+    create_race_results(session, 2026, japanese_results)
+
+
 def test_create_races(session, race_events):
     championship = create_races(session, 2026, race_events)
     assert championship.id == 1
@@ -293,29 +319,7 @@ def test_championship_entry_link(session):
     assert hamilton.entry_links[0].championship.year == 2025
 
 
-def test_get_constructor_ranks(session, race_events, standings_pairs):
-    australian_results = [
-        ResultData("albert_park", "russell", "1", "25"),
-        ResultData("albert_park", "antonelli", "2", "18"),
-        ResultData("albert_park", "leclerc", "3", "15"),
-        ResultData("albert_park", "hamilton", "4", "12"),
-    ]
-    japanese_results = [
-        ResultData("suzuka", "antonelli", "1", "25"),
-        ResultData("suzuka", "leclerc", "3", "15"),
-        ResultData("suzuka", "russell", "4", "12"),
-        ResultData(
-            "suzuka",
-            "hamilton",
-            "6",
-            "8",
-        ),
-    ]
-    create_races(session, 2026, race_events)
-    create_championship(session, 2026, standings_pairs)
-    create_race_results(session, 2026, australian_results)
-    create_race_results(session, 2026, japanese_results)
-
+def test_get_constructor_ranks(session, seeded_standings):
     standings = get_constructor_ranks(session, 2026)
 
     assert [(s.constructor.name, s.points) for s in standings] == [
@@ -324,29 +328,7 @@ def test_get_constructor_ranks(session, race_events, standings_pairs):
     ]
 
 
-def test_get_driver_ranks(session, race_events, standings_pairs):
-    australian_results = [
-        ResultData("albert_park", "russell", "1", "25"),
-        ResultData("albert_park", "antonelli", "2", "18"),
-        ResultData("albert_park", "leclerc", "3", "15"),
-        ResultData("albert_park", "hamilton", "4", "12"),
-    ]
-    japanese_results = [
-        ResultData("suzuka", "antonelli", "1", "25"),
-        ResultData("suzuka", "leclerc", "3", "15"),
-        ResultData("suzuka", "russell", "4", "12"),
-        ResultData(
-            "suzuka",
-            "hamilton",
-            "6",
-            "8",
-        ),
-    ]
-    create_races(session, 2026, race_events)
-    create_championship(session, 2026, standings_pairs)
-    create_race_results(session, 2026, australian_results)
-    create_race_results(session, 2026, japanese_results)
-
+def test_get_driver_ranks(session, seeded_standings):
     standings = get_driver_ranks(session, 2026)
 
     assert [(s.driver.last_name, s.points) for s in standings] == [
