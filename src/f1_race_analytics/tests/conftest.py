@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
+import f1_race_analytics.app as app
 from f1_race_analytics.database import (
     create_championship,
     create_race_results,
@@ -116,12 +117,20 @@ def standings_pairs():
 
 
 @pytest.fixture
-def seeded_season(session, race_events, standings_pairs):
-    create_races(session, 2026, race_events)
-    create_championship(session, 2026, standings_pairs)
+def seeded_season(session, race_events, standings_pairs, monkeypatch):
+    # Deliberately NOT the current calendar year: this makes the app.YEAR pin
+    # below load-bearing. It locks down app.YEAR to a fixed value, instead of
+    # letting it be whatever "datetime.now().year" returns.
+    # Remove the monkeypatch and the year falls back to the value returned by
+    # "datetime.now().year", but without 2099 data. So standings route tests
+    # would go red now, instead of silently passing until the clock catches up.
+    year = 2099
+    monkeypatch.setattr(app, "YEAR", year)
+    create_races(session, year, race_events)
+    create_championship(session, year, standings_pairs)
     create_race_results(
         session,
-        2026,
+        year,
         [
             ResultData("albert_park", "russell", "1", "25"),
             ResultData("albert_park", "antonelli", "2", "18"),
@@ -131,7 +140,7 @@ def seeded_season(session, race_events, standings_pairs):
     )
     create_race_results(
         session,
-        2026,
+        year,
         [
             ResultData("suzuka", "antonelli", "1", "25"),
             ResultData("suzuka", "leclerc", "3", "15"),

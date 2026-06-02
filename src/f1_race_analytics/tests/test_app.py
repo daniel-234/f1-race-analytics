@@ -37,14 +37,20 @@ def test_drivers_standings(client, seeded_season):
     response = client.get("/standings/drivers")
 
     assert response.status_code == 200
-    assert "Antonelli" in response.text
+    body = response.text
+    order = ["Antonelli", "Russell", "Leclerc", "Hamilton"]
+    positions = [body.index(name) for name in order]
+    assert positions == sorted(positions)
 
 
 def test_constructors_standings(client, seeded_season):
     response = client.get("/standings/constructors")
 
     assert response.status_code == 200
-    assert "Mercedes" in response.text
+    body = response.text
+    order = ["Mercedes", "Ferrari"]
+    positions = [body.index(name) for name in order]
+    assert positions == sorted(positions)
 
 
 def test_race_results(client, seeded_season):
