@@ -51,12 +51,6 @@ def get_all_races(session: Session) -> Sequence[Race]:
     return races
 
 
-def get_race_by_circuit_id(session: Session, circuit_id: str) -> Race | None:
-    statement = select(Race).where(Race.circuit_id == circuit_id)
-    race = session.exec(statement).first()
-    return race
-
-
 def get_result_by_circuit_id(
     session: Session, circuit_id: str
 ) -> Sequence[RaceResult] | None:
