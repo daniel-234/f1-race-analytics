@@ -62,6 +62,7 @@ def get_result_by_circuit_id(
         select(RaceResult)
         .where(RaceResult.race_id == race.id)
         .order_by(RaceResult.position)
+        # eager-load each result's driver up front, else the template fires one query per row (N+1)
         .options(selectinload(RaceResult.driver))
     )
     race_result = session.exec(saved_result).all()
