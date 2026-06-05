@@ -58,3 +58,21 @@ def test_race_results(client, seeded_season):
 
     assert response.status_code == 200
     assert "Russell" in response.text
+
+
+def test_results_unknown_circuit_returns_404(client, seeded_season):
+    response = client.get("/results/rome")
+
+    assert response.status_code == 404
+
+
+def test_circuit_with_no_results_returns_200(client, seeded_season):
+    # `seeded_season` takes `race_events` as an argument and passes it straight
+    # to `create_races`, that creates all 3 events, including Shanghai.
+    # But `seeded_season` only calls `create_race_results` for `albert_park`
+    # and `suzuka`, so `shanghai` exists as a race but it has zero results.
+    # This guards the `is None` check: if it's ever "simplified" to `if not results`,
+    # shanghai's [] would wrongly 404 and this test goes red.
+    response = client.get("/results/shanghai")
+
+    assert response.status_code == 200

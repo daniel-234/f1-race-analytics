@@ -82,6 +82,8 @@ async def get_race_result(
     circuit_id: str, request: Request, session: Annotated[Session, Depends(get_session)]
 ) -> HTMLResponse:
     results = get_result_by_circuit_id(session, circuit_id)
+    if results is None:
+        raise HTTPException(status_code=404, detail="Race not found")
     return templates.TemplateResponse(
         request=request,
         name="results.html",
