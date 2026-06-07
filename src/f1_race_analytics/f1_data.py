@@ -130,7 +130,7 @@ def fetch_constructor_driver_pairs(
 
 
 def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverData]:
-    drivers_data = _fetch_data(year, f"/constructors/{constructor_id}/drivers/")
+    drivers_data = _fetch_data(year, "constructors", constructor_id, "drivers")
     if drivers_data is None:
         print("Sorry, something went wrong")
         return []
@@ -149,7 +149,7 @@ def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverD
 
 
 def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
-    race_data = _fetch_data(year, f"circuits/{circuit_id}/results/")
+    race_data = _fetch_data(year, "circuits", circuit_id, "results")
     if race_data is None:
         print(f"No result for circuit {circuit_id}")
         return []
