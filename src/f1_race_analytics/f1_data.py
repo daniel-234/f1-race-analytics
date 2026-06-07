@@ -130,7 +130,7 @@ def fetch_constructor_driver_pairs(
 
 
 def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverData]:
-    drivers_data = _fetch_data(year, f"/constructors/{constructor_id}/drivers/")
+    drivers_data = _fetch_data(year, "constructors", constructor_id, "drivers")
     if drivers_data is None:
         print("Sorry, something went wrong")
         return []
@@ -149,7 +149,7 @@ def fetch_drivers_by_constructor(year: int, constructor_id: str) -> list[DriverD
 
 
 def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
-    race_data = _fetch_data(year, f"circuits/{circuit_id}/results/")
+    race_data = _fetch_data(year, "circuits", circuit_id, "results")
     if race_data is None:
         print(f"No result for circuit {circuit_id}")
         return []
@@ -175,17 +175,28 @@ def _convert_to_dt(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
 
-def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
+def _build_url(year: int, *segments: str) -> str:
+    """
+    Build a URL by joining path segments
+    """
+    base_path = f"{JOLPICA_ENDPOINT}/{year}"
+    endpoint = "/".join(segments)
+    url = f"{base_path}/{endpoint}/"
+    return url
+
+
+def _fetch_data(year: int, *segments: str) -> dict[str, dict] | None:
     """
     Retrieve historical data from Jolpica F1 API:
     """
+    url = _build_url(year, *segments)
     try:
-        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{endpoint}/")
+        response = httpx.get(url)
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
         print(
-            f"Failed to fetch data for {endpoint} for season {year}: {e.response.status_code}"
+            f"Failed to fetch data for {url} for season {year}: {e.response.status_code}"
         )
         return None
     except httpx.RequestError as e:
