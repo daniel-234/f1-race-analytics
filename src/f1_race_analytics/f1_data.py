@@ -185,17 +185,18 @@ def _build_url(year: int, *segments: str) -> str:
     return url
 
 
-def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
+def _fetch_data(year: int, *segments: str) -> dict[str, dict] | None:
     """
     Retrieve historical data from Jolpica F1 API:
     """
+    url = _build_url(year, *segments)
     try:
-        response = httpx.get(f"{JOLPICA_ENDPOINT}/{year}/{endpoint}/")
+        response = httpx.get(url)
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
         print(
-            f"Failed to fetch data for {endpoint} for season {year}: {e.response.status_code}"
+            f"Failed to fetch data for {url} for season {year}: {e.response.status_code}"
         )
         return None
     except httpx.RequestError as e:
