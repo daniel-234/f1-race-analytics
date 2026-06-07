@@ -175,6 +175,16 @@ def _convert_to_dt(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
 
+def _build_url(year: int, *segments: str) -> str:
+    """
+    Build a URL by joining path segments
+    """
+    base_path = f"{JOLPICA_ENDPOINT}/{year}"
+    endpoint = "/".join(segments)
+    url = f"{base_path}/{endpoint}/"
+    return url
+
+
 def _fetch_data(year: int, endpoint: str) -> dict[str, dict] | None:
     """
     Retrieve historical data from Jolpica F1 API:
