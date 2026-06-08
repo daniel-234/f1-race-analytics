@@ -145,7 +145,7 @@ def create_championship(
                 nationality=driver_data.nationality,
             )
             session.add(driver)
-        session.commit()
+        session.flush()
 
         if championship.id is None or constructor.id is None or driver.id is None:
             raise ValueError(
@@ -159,8 +159,8 @@ def create_championship(
         )
 
         session.add(link)
-        session.commit()
 
+    session.commit()
     session.refresh(championship)
 
     return championship
