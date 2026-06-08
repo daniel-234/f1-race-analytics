@@ -233,6 +233,14 @@ def test_create_championship(session, constructor_driver_pairs):
     ]
 
 
+def test_create_championship_dedupes_shared_constructor(
+    session, constructor_driver_pairs
+):
+    create_championship(session, 2026, constructor_driver_pairs)
+    constructors = session.exec(select(Constructor)).all()
+    assert len(constructors) == 2
+
+
 def test_championship_entry_link(session):
     """
     Test the 3-way link table (ChampionshipEntryLink) that connects
