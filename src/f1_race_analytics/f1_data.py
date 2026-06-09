@@ -176,6 +176,28 @@ def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
     return result_info
 
 
+def fetch_sprint_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
+    sprint_data = _fetch_data(year, "circuits", circuit_id, "sprint")
+    if sprint_data is None:
+        print(f"No result for sprint for circuit {circuit_id}")
+        return []
+    sprint_races = sprint_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    if not sprint_races:
+        print(f"No sprint races found for circuit {circuit_id}")
+        return []
+    results = sprint_races[0].get("SprintResults", [])
+    result_info = [
+        ResultData(
+            circuit_id,
+            result.get("Driver", {}).get("driverId", ""),
+            result.get("position", ""),
+            result.get("points", ""),
+        )
+        for result in results
+    ]
+    return result_info
+
+
 def _convert_to_dt(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
