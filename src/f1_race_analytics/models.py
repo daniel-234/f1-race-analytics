@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from .f1_data import EventStatus, compute_status
+from .f1_data import EventStatus, SessionType, compute_status
 
 
 class Championship(SQLModel, table=True):
@@ -87,6 +87,7 @@ class RaceResult(SQLModel, table=True):
     driver_id: int | None = Field(
         default=None, foreign_key="driver.id", primary_key=True
     )
+    session_type: SessionType = Field(primary_key=True)
 
     # Relationship context: data that belongs to the combination Race-Driver
     position: int

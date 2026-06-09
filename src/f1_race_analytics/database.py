@@ -5,7 +5,7 @@ from typing import NamedTuple
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from .f1_data import ConstructorData, DriverData, Event, ResultData
+from .f1_data import ConstructorData, DriverData, Event, ResultData, SessionType
 from .models import (
     Championship,
     ChampionshipEntryLink,
@@ -199,6 +199,7 @@ def create_race_results(
         result = RaceResult(
             race_id=race.id,
             driver_id=driver.id,
+            session_type=SessionType.GRAND_PRIX,
             position=position,
             points=points,
         )

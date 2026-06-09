@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from enum import Enum
+from enum import Enum, StrEnum, auto
 from typing import NamedTuple
 
 import httpx
@@ -11,6 +11,11 @@ class EventStatus(Enum):
     FUTURE = "future"
     LIVE = "live"
     PAST = "past"
+
+
+class SessionType(StrEnum):
+    GRAND_PRIX = auto()
+    SPRINT = auto()
 
 
 def compute_status(start_date: date, end_date: date) -> EventStatus:
