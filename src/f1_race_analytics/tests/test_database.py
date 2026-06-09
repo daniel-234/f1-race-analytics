@@ -10,7 +10,12 @@ from f1_race_analytics.database import (
     get_constructor_ranks,
     get_driver_ranks,
 )
-from f1_race_analytics.f1_data import ConstructorData, DriverData, ResultData
+from f1_race_analytics.f1_data import (
+    ConstructorData,
+    DriverData,
+    ResultData,
+    SessionType,
+)
 from f1_race_analytics.models import (
     Championship,
     ChampionshipEntryLink,
@@ -100,8 +105,8 @@ def seeded_standings(session, race_events, standings_pairs):
     ]
     create_races(session, 2026, race_events)
     create_championship(session, 2026, standings_pairs)
-    create_race_results(session, 2026, australian_results)
-    create_race_results(session, 2026, japanese_results)
+    create_race_results(session, 2026, SessionType.GRAND_PRIX, australian_results)
+    create_race_results(session, 2026, SessionType.GRAND_PRIX, japanese_results)
 
 
 def test_create_races(session, race_events):
