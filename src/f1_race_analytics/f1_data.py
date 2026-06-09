@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from enum import Enum
+from enum import Enum, StrEnum, auto
 from typing import NamedTuple
 
 import httpx
@@ -11,6 +11,11 @@ class EventStatus(Enum):
     FUTURE = "future"
     LIVE = "live"
     PAST = "past"
+
+
+class SessionType(StrEnum):
+    GRAND_PRIX = auto()
+    SPRINT = auto()
 
 
 def compute_status(start_date: date, end_date: date) -> EventStatus:
@@ -159,6 +164,28 @@ def fetch_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
         print(f"No races found for circuit {circuit_id}")
         return []
     results = races[0].get("Results", [])
+    result_info = [
+        ResultData(
+            circuit_id,
+            result.get("Driver", {}).get("driverId", ""),
+            result.get("position", ""),
+            result.get("points", ""),
+        )
+        for result in results
+    ]
+    return result_info
+
+
+def fetch_sprint_results_by_race(year: int, circuit_id: str) -> list[ResultData]:
+    sprint_data = _fetch_data(year, "circuits", circuit_id, "sprint")
+    if sprint_data is None:
+        print(f"No result for sprint for circuit {circuit_id}")
+        return []
+    sprint_races = sprint_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    if not sprint_races:
+        print(f"No sprint races found for circuit {circuit_id}")
+        return []
+    results = sprint_races[0].get("SprintResults", [])
     result_info = [
         ResultData(
             circuit_id,

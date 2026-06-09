@@ -10,7 +10,13 @@ from f1_race_analytics.database import (
     create_race_results,
     create_races,
 )
-from f1_race_analytics.f1_data import ConstructorData, DriverData, Event, ResultData
+from f1_race_analytics.f1_data import (
+    ConstructorData,
+    DriverData,
+    Event,
+    ResultData,
+    SessionType,
+)
 
 
 @pytest.fixture
@@ -131,6 +137,7 @@ def seeded_season(session, race_events, standings_pairs, monkeypatch):
     create_race_results(
         session,
         year,
+        SessionType.GRAND_PRIX,
         [
             ResultData("albert_park", "russell", "1", "25"),
             ResultData("albert_park", "antonelli", "2", "18"),
@@ -141,6 +148,7 @@ def seeded_season(session, race_events, standings_pairs, monkeypatch):
     create_race_results(
         session,
         year,
+        SessionType.GRAND_PRIX,
         [
             ResultData("suzuka", "antonelli", "1", "25"),
             ResultData("suzuka", "leclerc", "3", "15"),

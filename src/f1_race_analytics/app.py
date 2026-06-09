@@ -26,6 +26,7 @@ from .database import (
 )
 from .f1_data import (
     EventStatus,
+    SessionType,
     fetch_constructor_driver_pairs,
     fetch_races,
     fetch_results_by_race,
@@ -48,7 +49,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             if race.status() == EventStatus.PAST:
                 result_data = fetch_results_by_race(YEAR, race.circuit_id)
                 if result_data:
-                    create_race_results(session, YEAR, result_data)
+                    create_race_results(
+                        session, YEAR, SessionType.GRAND_PRIX, result_data
+                    )
     yield
 
 
